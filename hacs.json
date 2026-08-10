@@ -1,4 +1,6 @@
 {
   "name": "GLaDOS 3D Card",
-  "filename": "glados-3d-card.js"
+  "render_readme": true,
+  "filename": "glados-3d-card.zip",
+  "zip_release": true
 }

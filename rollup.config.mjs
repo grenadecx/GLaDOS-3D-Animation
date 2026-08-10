@@ -5,14 +5,17 @@ import terser from '@rollup/plugin-terser';
 import fs from 'fs/promises';
 import path from 'path';
 
+/** The GLB is CC-BY-SA, so its licence has to travel with it into every
+ *  distribution — dist/ is what the HACS zip is built from. */
 const copyModel = {
   name: 'copy-model',
   async writeBundle() {
-    await fs.mkdir(path.join(process.cwd(), 'dist', 'models'), { recursive: true });
-    await fs.copyFile(
-      path.join(process.cwd(), 'models', 'GLaDOS.glb'),
-      path.join(process.cwd(), 'dist', 'models', 'GLaDOS.glb'),
-    );
+    const src = path.join(process.cwd(), 'models');
+    const dest = path.join(process.cwd(), 'dist', 'models');
+    await fs.mkdir(dest, { recursive: true });
+    for (const file of ['GLaDOS.glb', 'LICENSE.txt']) {
+      await fs.copyFile(path.join(src, file), path.join(dest, file));
+    }
   },
 };
 

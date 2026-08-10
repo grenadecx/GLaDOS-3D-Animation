@@ -29,6 +29,9 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+      - name: Package for HACS
+        run: cd dist && zip -r ../glados-3d-card.zip glados-3d-card.js models
+
       - name: Auto-create version tag
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')
         env:
@@ -53,7 +56,9 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.gitversion.outputs.majorMinorPatch }}
-          files: dist/*
+          files: |
+            glados-3d-card.zip
+            dist/glados-3d-card.js
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
