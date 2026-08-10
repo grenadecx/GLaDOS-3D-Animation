@@ -3,6 +3,9 @@
 A 3D animated GLaDOS custom card for Home Assistant Lovelace dashboards. Renders the
 GLaDOS model with Three.js, driven by voice assistant entity states and music sync.
 
+> Unofficial fan project. Not affiliated with, authorised or endorsed by Valve
+> Corporation. Code is MIT; the model is CC-BY-SA — see [Licence](#licence).
+
 ## Install
 
 1. Build:
@@ -107,18 +110,8 @@ by **BlenderCranium**, from BlendSwap, licensed **CC-BY-SA**. It is a rigged,
 ceiling-mounted GLaDOS with an emissive eye, matching the blend's own
 [reference render](https://blendswap.com/blend_previews/4565/0/0).
 
-**Licensing.** `models/GLaDOS.glb` is a format conversion of that blend, so it is
-an adaptation and carries the same CC-BY-SA terms — attribution, indicate changes,
-and share any further adaptation of the *model* alike. The card's source code is
-separate work under MIT (`package.json`); ShareAlike applies to the model file and
-derivatives of it, not to the code that loads it. Changes made here: converted to
-glTF, and material colours re-authored at load time (see below) because the
-originals did not survive the export.
-
-Note also that GLaDOS is a Valve character and the blend is listed as fan art. The
-artist's CC-BY-SA covers their model; it does not grant any rights in Valve's
-character design or trademarks. Fine for a personal dashboard — worth thinking
-about before publishing or selling anything built on it.
+`models/GLaDOS.glb` is a format conversion of that blend, so it is an adaptation
+and carries the same CC-BY-SA terms. See the [Licence](#licence) section below.
 
 Two quirks of that blend are handled at load time in `src/model.ts`, and are worth
 knowing if you swap in a different GLB:
@@ -169,3 +162,25 @@ node test/server.mjs   # static server on :3000
 - `http://localhost:3000/test/probe.html` — standalone model inspector for framing,
   lighting and material questions, with no card or rebuild in the loop. See the
   comment at the top of that file for its parameters.
+
+## Licence
+
+Two licences apply, to different parts of this repository.
+
+**Source code** — MIT, see [`LICENSE`](LICENSE). Use it however you like.
+
+**`models/GLaDOS.glb`** — CC-BY-SA, see [`models/LICENSE.txt`](models/LICENSE.txt).
+A glTF conversion of ["GladOS from Portal 2 Rigged Textured Updated"](https://blendswap.com/blend/4565)
+by **BlenderCranium** on BlendSwap. You may redistribute and adapt it, including
+commercially, provided you keep the attribution, state your changes, and license
+any further adaptation of the model under CC-BY-SA as well. ShareAlike reaches the
+model file and derivatives of it — not the code that loads it, which is why the two
+licences coexist here.
+
+**Trademarks.** GLaDOS, Portal and Aperture Science are trademarks of Valve
+Corporation. This project is unofficial fan work and is not affiliated with,
+authorised, endorsed by, or in any way connected to Valve Corporation. The model
+author's CC-BY-SA grant covers their own modelling work; nobody can license rights
+they do not hold, so it conveys nothing in respect of Valve's character design or
+marks. Distributing this as free fan software is the well-trodden path — attaching
+money to it is not.
