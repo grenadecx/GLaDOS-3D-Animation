@@ -1,7 +1,7 @@
 import { LovelaceCardConfig } from 'custom-card-helpers';
 
 export interface Glados3DConfig extends LovelaceCardConfig {
-  type: 'glados-3d-card';
+  type: 'custom:glados-3d-card';
   entity: string;
   media_entity?: string;
   bpm_entity?: string;

@@ -54,7 +54,7 @@ const VISIBILITY_MARGIN = '150px';
 @customElement('glados-3d-card')
 export class Glados3DCard extends LitElement {
   public static getStubConfig(): Record<string, unknown> {
-    return { type: 'glados-3d-card', ...DEFAULTS };
+    return { type: 'custom:glados-3d-card', ...DEFAULTS };
   }
 
   @state() private _config!: Glados3DConfig;
