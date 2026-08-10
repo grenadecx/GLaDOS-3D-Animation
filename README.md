@@ -48,6 +48,7 @@ GLaDOS model with Three.js, driven by voice assistant entity states and music sy
 | `pitch` | number | `5` | Camera elevation, degrees |
 | `pan_x` / `pan_y` | number | `-0.5` / `0.5` | Slide the framing, in model radii |
 | `bloom` | number | `0.9` | Eye bloom strength; `0` disables post-processing |
+| `max_fps` | number | `60` | Frame rate cap; `0` renders every animation frame |
 | `portals` | boolean | `false` | Portal rings while speaking/computing |
 
 ## States
@@ -118,6 +119,23 @@ knowing if you swap in a different GLB:
   therefore the spec default of metalness 1 / roughness 1 — a pure metal with no
   diffuse response, which renders **black** without an environment map. `PALETTE`
   re-authors those materials by name, and `src/scene.ts` supplies a PMREM environment.
+
+## Running on a phone
+
+Two things keep the cost down, both on by default:
+
+- **The render loop stops when the card is off-screen.** `requestAnimationFrame`
+  is only throttled for a hidden *document* — a card that has merely been
+  scrolled past on a long dashboard keeps rendering at full rate. An
+  `IntersectionObserver` stops the loop outright and restarts it 150px before the
+  card scrolls back into view.
+- **`max_fps` caps the frame rate**, 60 by default. A 120 Hz phone would
+  otherwise render this twice as often as it needs.
+
+If you need more headroom, in rough order of saving per unit of visual loss:
+lower `max_fps` to 30, drop `MSAA_SAMPLES` in `src/scene.ts` from 4 to 2, then
+set `bloom: 0`. Memory is unlikely to be the constraint — a phone-sized card uses
+about 78 MB of GPU memory and 74 draw calls per frame.
 
 ## Development
 

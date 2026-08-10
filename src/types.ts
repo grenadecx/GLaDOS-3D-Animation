@@ -17,6 +17,9 @@ export interface Glados3DConfig extends LovelaceCardConfig {
   pan_y?: number;
   /** Eye bloom strength; 0 disables post-processing entirely. */
   bloom?: number;
+  /** Frame rate cap. 0 renders on every animation frame, which on a 120 Hz
+   *  phone is twice the work this animation needs. */
+  max_fps?: number;
   /** Card width:height, used to give the canvas a height inside Lovelace. */
   aspect_ratio?: number;
   /** Portal rings during speaking/computing. Off by default. */

@@ -37,12 +37,21 @@ const DEFAULTS: Omit<Glados3DConfig, 'type'> = {
   pan_x: -0.5,
   pan_y: 0.5,
   bloom: 0.9,
+  max_fps: 60,
   aspect_ratio: 4 / 3,
   portals: false,
 };
 
 /** Fraction of the vertical view the head fills at zoom 1. */
 const BASE_FILL = 0.375;
+
+/** Frame budget tolerance. A 120 Hz display ticks at 8.33 ms, so an exact
+ *  16.67 ms test for 60 fps would reject the 16.67 ms tick on jitter and halve
+ *  the rate to 30. A couple of milliseconds of slack keeps the cadence honest. */
+const FRAME_SLACK_MS = 2;
+
+/** Resume slightly before the card scrolls into view, so it is already moving. */
+const VISIBILITY_MARGIN = '150px';
 
 @customElement('glados-3d-card')
 export class Glados3DCard extends LitElement {
@@ -67,7 +76,9 @@ export class Glados3DCard extends LitElement {
 
   private _frameId = 0;
   private _resizeObserver: ResizeObserver | null = null;
+  private _visibilityObserver: IntersectionObserver | null = null;
   private _lastFrameTime = 0;
+  private _onScreen = true;
   private _destroyed = false;
 
   setConfig(config: Glados3DConfig): void {
@@ -91,9 +102,7 @@ export class Glados3DCard extends LitElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
-    if (this._frameId) cancelAnimationFrame(this._frameId);
-    this._frameId = 0;
-    this._lastFrameTime = 0;
+    this._stopLoop();
     // Only a genuine removal should cost a WebGL context teardown, so let a
     // re-parent settle first.
     setTimeout(() => { if (!this.isConnected) this._destroy(); }, 0);
@@ -116,7 +125,35 @@ export class Glados3DCard extends LitElement {
     });
     this._resizeObserver.observe(this);
 
+    // requestAnimationFrame keeps firing for a card that has merely been
+    // scrolled past — only a hidden document throttles it. On a long dashboard
+    // that is a full frame rate of invisible work, so stop the loop outright.
+    this._visibilityObserver = new IntersectionObserver(
+      (entries) => this._setOnScreen(entries.some((e) => e.isIntersecting)),
+      { rootMargin: VISIBILITY_MARGIN }
+    );
+    this._visibilityObserver.observe(this);
+
     void this._loadModel();
+  }
+
+  private _setOnScreen(onScreen: boolean): void {
+    if (onScreen === this._onScreen) return;
+    this._onScreen = onScreen;
+    if (onScreen) {
+      // Drop the stale timestamp so the first frame back doesn't bill the
+      // animation for however long the card spent off-screen.
+      this._lastFrameTime = 0;
+      this._startLoop();
+    } else {
+      this._stopLoop();
+    }
+  }
+
+  private _stopLoop(): void {
+    if (this._frameId) cancelAnimationFrame(this._frameId);
+    this._frameId = 0;
+    this._lastFrameTime = 0;
   }
 
   render() {
@@ -214,12 +251,21 @@ export class Glados3DCard extends LitElement {
   }
 
   private _startLoop(): void {
-    if (this._frameId) return;
+    if (this._frameId || this._destroyed || !this._onScreen) return;
+
+    const maxFps = this._config?.max_fps ?? DEFAULTS.max_fps!;
+    const minFrameMs = maxFps > 0 ? 1000 / maxFps - FRAME_SLACK_MS : 0;
+
     const loop = (timestamp: number) => {
       if (this._destroyed) return;
       this._frameId = requestAnimationFrame(loop);
 
-      const dt = this._lastFrameTime ? Math.min((timestamp - this._lastFrameTime) / 1000, 0.1) : 0;
+      // Skip the frame entirely when it arrives inside the budget — no state
+      // advance, so dt stays honest for whichever frame does get rendered.
+      const elapsed = this._lastFrameTime ? timestamp - this._lastFrameTime : Infinity;
+      if (elapsed < minFrameMs) return;
+
+      const dt = this._lastFrameTime ? Math.min(elapsed / 1000, 0.1) : 0;
       this._lastFrameTime = timestamp;
 
       // The beat clock keeps running whatever the state, so that returning to
@@ -268,11 +314,11 @@ export class Glados3DCard extends LitElement {
 
   private _destroy(): void {
     this._destroyed = true;
-    if (this._frameId) cancelAnimationFrame(this._frameId);
-    this._frameId = 0;
-    this._lastFrameTime = 0;
+    this._stopLoop();
     this._resizeObserver?.disconnect();
     this._resizeObserver = null;
+    this._visibilityObserver?.disconnect();
+    this._visibilityObserver = null;
     this._model?.dispose();
     this._model = null;
     this._scene?.dispose();
