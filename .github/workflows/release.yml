@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: gittools/actions/gitversion/setup@v4.7.0
+        with:
+          versionSpec: '6.x'
+
+      - id: gitversion
+        uses: gittools/actions/gitversion/execute@v4.7.0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Auto-create version tag
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          FULL="v${{ steps.gitversion.outputs.majorMinorPatch }}"
+          echo "Calculated version: ${FULL}"
+
+          # Only push if this tag doesn't already exist
+          if git rev-parse "${FULL}" >/dev/null 2>&1; then
+            echo "Tag ${FULL} already exists, skipping"
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email 'github-actions[bot]@users.noreply.github.com'
+            git tag "${FULL}"
+            git push "origin" "${FULL}"
+            echo "Created and pushed tag ${FULL}"
+          fi
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ steps.gitversion.outputs.majorMinorPatch }}
+          files: dist/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
