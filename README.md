@@ -101,9 +101,24 @@ travel with the body.
 
 ## The model
 
-The card uses **`models/GLaDOS.glb`** — [BlendSwap #4565](https://blendswap.com/blend/4565)
-(CC-BY), exported from Blender as glTF. It is a rigged, ceiling-mounted GLaDOS with an
-emissive eye, matching the blend's own [reference render](https://blendswap.com/blend_previews/4565/0/0).
+The card uses **`models/GLaDOS.glb`** — a glTF export of
+["GladOS from Portal 2 Rigged Textured Updated"](https://blendswap.com/blend/4565)
+by **BlenderCranium**, from BlendSwap, licensed **CC-BY-SA**. It is a rigged,
+ceiling-mounted GLaDOS with an emissive eye, matching the blend's own
+[reference render](https://blendswap.com/blend_previews/4565/0/0).
+
+**Licensing.** `models/GLaDOS.glb` is a format conversion of that blend, so it is
+an adaptation and carries the same CC-BY-SA terms — attribution, indicate changes,
+and share any further adaptation of the *model* alike. The card's source code is
+separate work under MIT (`package.json`); ShareAlike applies to the model file and
+derivatives of it, not to the code that loads it. Changes made here: converted to
+glTF, and material colours re-authored at load time (see below) because the
+originals did not survive the export.
+
+Note also that GLaDOS is a Valve character and the blend is listed as fan art. The
+artist's CC-BY-SA covers their model; it does not grant any rights in Valve's
+character design or trademarks. Fine for a personal dashboard — worth thinking
+about before publishing or selling anything built on it.
 
 Two quirks of that blend are handled at load time in `src/model.ts`, and are worth
 knowing if you swap in a different GLB:
