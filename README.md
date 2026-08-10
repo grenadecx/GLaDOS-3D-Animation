@@ -6,7 +6,27 @@ GLaDOS model with Three.js, driven by voice assistant entity states and music sy
 > Unofficial fan project. Not affiliated with, authorised or endorsed by Valve
 > Corporation. Code is MIT; the model is CC-BY-SA — see [Licence](#licence).
 
-## Install
+## Install via HACS (recommended)
+
+1. Add this repo as a custom HACS repository.
+2. Search **GLaDOS 3D Card** in HACS → install.
+3. Register it as a Lovelace resource:
+   ```yaml
+   resources:
+     - url: /community/glados-3d-card/glados-3d-card.js
+       type: module
+   ```
+4. Add the card:
+   ```yaml
+   type: custom:glados-3d-card
+   entity: assist_satellite.living_room
+   media_entity: media_player.living_room
+   bpm_entity: sensor.living_room_bpm
+   ```
+
+The model is bundled with the card — no manual copy needed.
+
+## Manual install
 
 1. Build:
    ```bash
@@ -34,7 +54,10 @@ GLaDOS model with Three.js, driven by voice assistant entity states and music sy
    entity: assist_satellite.living_room
    media_entity: media_player.living_room
    bpm_entity: sensor.living_room_bpm
+   model_url: /local/models/GLaDOS.glb
    ```
+
+The `model_url` override is needed because manual install doesn't use the HACS path.
 
 ## Configuration
 
