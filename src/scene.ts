@@ -29,6 +29,19 @@ export interface SceneHandles {
 const BLOOM_THRESHOLD = 1.7;
 const BLOOM_RADIUS = 0.4;
 
+/**
+ * MSAA samples for the pass that rasterises geometry.
+ *
+ * The renderer's `antialias` flag only covers the default framebuffer, and once
+ * bloom is enabled the scene is never drawn there — it goes into the composer's
+ * own render target, which three.js creates unsampled. So `antialias: true` is
+ * silently inert whenever post-processing is on, and this model's white-on-black
+ * silhouettes and thin cables are exactly the content that shows it. Handing the
+ * composer a multisampled target restores it. Drop to 2, or 0, if a low-end
+ * device needs the fill rate back.
+ */
+const MSAA_SAMPLES = 4;
+
 export function initScene(canvas: HTMLCanvasElement, config: Glados3DConfig): SceneHandles {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(config.bg_color || '#0d0f14');
@@ -36,8 +49,9 @@ export function initScene(canvas: HTMLCanvasElement, config: Glados3DConfig): Sc
   const camera = new THREE.PerspectiveCamera(35, aspectOf(canvas), 0.1, 500);
   camera.position.set(0, 0, 10);
 
+  const pixelRatio = Math.min(window.devicePixelRatio, 2);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(pixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 0.95;
@@ -66,8 +80,21 @@ export function initScene(canvas: HTMLCanvasElement, config: Glados3DConfig): Sc
   let composer: EffectComposer | null = null;
 
   if (bloomStrength > 0) {
-    composer = new EffectComposer(renderer);
-    composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Built at CSS size so setPixelRatio scales it to the drawing buffer; resize()
+    // establishes the real dimensions before anything is drawn.
+    const size = renderer.getSize(new THREE.Vector2());
+    const target = new THREE.WebGLRenderTarget(Math.max(size.x, 1), Math.max(size.y, 1), {
+      type: THREE.HalfFloatType,
+      samples: MSAA_SAMPLES,
+    });
+
+    // Both of the composer's buffers must keep the sample count. EffectComposer
+    // clones this target into renderTarget2 and then assigns it as the *read*
+    // buffer, which is the one RenderPass actually draws the scene into — so
+    // desampling the clone as an "optimisation" silently disables MSAA.
+    composer = new EffectComposer(renderer, target);
+    composer.setPixelRatio(pixelRatio);
+
     composer.addPass(new RenderPass(scene, camera));
     composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), bloomStrength, BLOOM_RADIUS, BLOOM_THRESHOLD));
     composer.addPass(new OutputPass());
