@@ -8,56 +8,88 @@ GLaDOS model with Three.js, driven by voice assistant entity states and music sy
 
 ## Install via HACS (recommended)
 
-1. Add this repo as a custom HACS repository.
-2. Search **GLaDOS 3D Card** in HACS → install.
-3. Register it as a Lovelace resource:
-   ```yaml
-   resources:
-     - url: /community/glados-3d-card/glados-3d-card.js
-       type: module
-   ```
-4. Add the card:
-   ```yaml
-   type: custom:glados-3d-card
-   entity: assist_satellite.living_room
-   media_entity: media_player.living_room
-   bpm_entity: sensor.living_room_bpm
-   ```
+**1. Add this repo to HACS.** HACS → ⋮ (top right) → **Custom repositories**.
+Paste `https://github.com/grenadecx/GLaDOS-3D-Animation` and set the type to
+**Dashboard** — that is HACS's category for a Lovelace card. Older guides call it
+*Plugin* or *Lovelace*; it was renamed, and Dashboard is the same thing.
 
-The model is bundled with the card — no manual copy needed.
+**2. Download it.** Search **GLaDOS 3D Card** in HACS → *Download*, then reload
+your browser when prompted.
+
+**3. Register the resource.** On a normal UI dashboard (storage mode) HACS does
+this for you — skip to step 4. Only do this yourself if your dashboard is in YAML
+mode, or if step 4 fails with *Custom element doesn't exist*:
+
+```yaml
+# configuration.yaml, under lovelace:
+resources:
+  - url: /hacsfiles/GLaDOS-3D-Animation/glados-3d-card.js
+    type: module
+```
+
+Via the UI the same entry is Settings → Dashboards → ⋮ → **Resources** → *Add
+resource*, with resource type **JavaScript module** — that is what `type: module`
+means. (The other option, *JavaScript file*, is the legacy type; don't use it.)
+
+**4. Add the card** to a dashboard:
+
+```yaml
+type: custom:glados-3d-card
+entity: assist_satellite.living_room
+media_entity: media_player.living_room
+bpm_entity: sensor.living_room_bpm
+```
+
+The model is downloaded alongside the card, so `model_url` needs no override.
 
 ## Manual install
 
-1. Build:
-   ```bash
-   npm install
-   npm run build
-   ```
+**1. Build** — or skip this and unzip `glados-3d-card.zip` from the
+[latest release](https://github.com/grenadecx/GLaDOS-3D-Animation/releases),
+which has the same contents as `dist/`:
 
-2. Copy `dist/glados-3d-card.js` into your Home Assistant `www/` folder.
+```bash
+npm install
+npm run build
+```
 
-3. Copy the model into `www/models/`:
-   ```bash
-   cp models/GLaDOS.glb /path/to/homeassistant/www/models/GLaDOS.glb
-   ```
+**2. Copy the card and the model** into your Home Assistant `config/www/` folder:
 
-4. Register it as a Lovelace resource:
-   ```yaml
-   resources:
-     - url: /local/glados-3d-card.js
-       type: module
-   ```
+```bash
+cp dist/glados-3d-card.js /path/to/homeassistant/www/
+mkdir -p /path/to/homeassistant/www/models
+cp models/GLaDOS.glb /path/to/homeassistant/www/models/
+```
 
-5. Add the card:
-   ```yaml
-   type: custom:glados-3d-card
-   entity: assist_satellite.living_room
-   media_entity: media_player.living_room
-   bpm_entity: sensor.living_room_bpm
-   model_url: /local/models/GLaDOS.glb
-   ```
+**3. Register the resource** — Settings → Dashboards → ⋮ → **Resources** → *Add
+resource*, URL `/local/glados-3d-card.js`, type **JavaScript module**. The YAML
+equivalent, for a YAML-mode dashboard:
 
-The `model_url` override is needed because manual install doesn't use the HACS path.
+```yaml
+resources:
+  - url: /local/glados-3d-card.js
+    type: module
+```
+
+**4. Add the card**, pointing `model_url` at the copy you made — the default path
+is the HACS one, so this override is required for a manual install:
+
+```yaml
+type: custom:glados-3d-card
+entity: assist_satellite.living_room
+media_entity: media_player.living_room
+bpm_entity: sensor.living_room_bpm
+model_url: /local/models/GLaDOS.glb
+```
+
+## If the card doesn't appear
+
+- **"Custom element doesn't exist: glados-3d-card"** — the resource isn't
+  registered, or the browser cached the old dashboard. Check the Resources list,
+  then hard-reload (Ctrl/Cmd + Shift + R).
+- **Card renders but stays empty** — the GLB didn't load. Open the browser
+  console; a 404 on the model means `model_url` is wrong. Paths are
+  case-sensitive.
 
 ## Configuration
 
@@ -66,7 +98,7 @@ The `model_url` override is needed because manual install doesn't use the HACS p
 | `entity` | string | *required* | Voice assistant entity ID |
 | `media_entity` | string | — | Media player entity, for playback detection |
 | `bpm_entity` | string | — | BPM sensor entity (defaults to 120 BPM) |
-| `model_url` | string | `/local/models/GLaDOS.glb` | Path to the GLB |
+| `model_url` | string | `/hacsfiles/GLaDOS-3D-Animation/models/GLaDOS.glb` | Path to the GLB |
 | `bg_color` | string | `#0d0f14` | Scene background |
 | `aspect_ratio` | number | `1.3333` | Card width ÷ height |
 | `zoom` | number | `1` | Framing multiplier; >1 moves in |
