@@ -23,6 +23,7 @@ node test/server.mjs   # dev server on :3000 → /test, /test/probe.html
 | File | Purpose |
 |------|---------|
 | `src/glados-card.ts` | Lit card element, HA integration |
+| `src/editor.ts` | Visual config editor — `ha-form` schema, rendered by HA |
 | `src/scene.ts` | Three.js scene setup, PMREM environment |
 | `src/model.ts` | GLB load, origin prune, material palette fix, wire re-parent |
 | `src/states.ts` | State machine: Standby → Listening → Computing → Speaking → Dancing |

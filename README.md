@@ -91,6 +91,9 @@ model_url: /local/GLaDOS.glb
 
 ## Configuration
 
+Every field below can be set from the visual editor — *Add card* → **GLaDOS 3D
+Card**, or *Edit* on an existing card — or in YAML directly.
+
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `entity` | string | *required* | Voice assistant entity ID |

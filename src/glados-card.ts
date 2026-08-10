@@ -16,6 +16,7 @@ import { loadModel, ModelHandles } from './model.js';
 import { initAnimation, AnimationHandles } from './animation.js';
 import { determineState, isMediaPlaying } from './states.js';
 import { initMusic, parseBpmEntityValue, MusicHandles } from './music.js';
+import './editor.js';
 
 (window as any).customCards = (window as any).customCards || [];
 (window as any).customCards.push({
@@ -55,6 +56,10 @@ const VISIBILITY_MARGIN = '150px';
 export class Glados3DCard extends LitElement {
   public static getStubConfig(): Record<string, unknown> {
     return { type: 'custom:glados-3d-card', ...DEFAULTS };
+  }
+
+  public static getConfigElement(): HTMLElement {
+    return document.createElement('glados-3d-card-editor');
   }
 
   @state() private _config!: Glados3DConfig;
