@@ -1,0 +1,27 @@
+{
+  "name": "glados-3d-card",
+  "version": "0.1.0",
+  "description": "3D GLaDOS custom Lovelace card for Home Assistant",
+  "main": "dist/glados-3d-card.js",
+  "scripts": {
+    "build": "rollup -c",
+    "start": "rollup -cw"
+  },
+  "dependencies": {
+    "custom-card-helpers": "^2.0.0",
+    "lit": "^3.2.0",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.0.0",
+    "@types/three": "^0.185.4",
+    "playwright": "^1.62.1",
+    "rollup": "^4.20.0",
+    "tslib": "^2.8.1",
+    "typescript": "^5.6.0"
+  },
+  "license": "MIT"
+}

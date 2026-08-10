@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!--
+    Standalone model inspector, independent of the card bundle. Everything is a
+    query parameter, so framing/lighting/material questions can be answered with
+    a URL instead of a rebuild. Reports to window.__probe; sets window.__ready.
+
+      /test/probe.html?sub=Bone014&yaw=-20&pitch=5&fill=0.3&bloom=0.9
+      &cull=0   keep the blend's origin clutter
+      &pal=0    skip the material palette (shows the raw glTF)
+      &clip=1&time=3   sample a baked armature clip
+  -->
+  <title>GLaDOS model probe</title>
+  <style>html,body{margin:0;height:100%;background:#000}canvas{display:block}</style>
+  <script type="importmap">
+  { "imports": { "three": "/node_modules/three/build/three.module.js", "three/addons/": "/node_modules/three/examples/jsm/" } }
+  </script>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const q = new URLSearchParams(location.search);
+const n = (k, d) => q.has(k) ? +q.get(k) : d;
+const W = n('w', 700), H = n('h', 700);
+const YAW = n('yaw', 0) * Math.PI / 180;
+const PITCH = n('pitch', 0) * Math.PI / 180;
+const FILL = n('fill', 0.9);
+const SUB = q.get('sub') || '';
+const PAL = q.get('pal') !== '0';
+const CULL = q.get('cull') !== '0';
+const TIME = n('time', 0);
+const CLIP = q.get('clip');
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = n('exp', 1.0);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(q.get('bg') ? '#' + q.get('bg') : '#0d0f14');
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = n('envi', 0.35);
+
+scene.add(new THREE.AmbientLight(0xffffff, n('amb', 0.25)));
+const key = new THREE.DirectionalLight(0xfff2e0, n('key', 2.2)); key.position.set(4, 6, 6); scene.add(key);
+const fill = new THREE.DirectionalLight(0x8fb4ff, n('fil', 0.9)); fill.position.set(-6, 1, 4); scene.add(fill);
+const rim = new THREE.DirectionalLight(0xffffff, n('rim', 1.6)); rim.position.set(-2, 3, -7); scene.add(rim);
+
+// Root children that make up the visible GLaDOS. Everything else in the blend is
+// Blender material-preview clutter (colour clips, lamp planes, PotatOS) parked at the origin.
+const KEEP = new Set(['Torus', 'Armature',
+  'Wires_Head_in', 'Wires_Out', 'Wires_In', 'BezierCurve024']);
+
+const PALETTE = {
+  'Plates':        { color: 0xf1eee8, metalness: 0.10, roughness: 0.38 },
+  'Plates 2':      { color: 0xe8e5df, metalness: 0.15, roughness: 0.42 },
+  'Faceplate':     { color: 0xf4f2ee, metalness: 0.05, roughness: 0.30 },
+  'Material.001':  { color: 0xdedbd5, metalness: 0.20, roughness: 0.45 },
+  'Internal':      { color: 0x17181b, metalness: 0.75, roughness: 0.42 },
+  'Logo':          { color: 0x0d0d0f, metalness: 0.40, roughness: 0.50 },
+  'Brushed Metal': { color: 0x9fa0a4, metalness: 1.00, roughness: 0.32 },
+  'Shadow':        { color: 0x050506, metalness: 0.00, roughness: 1.00 },
+};
+
+const report = {};
+new GLTFLoader().load('/models/GLaDOS.glb', (gltf) => {
+  const root = gltf.scene;
+
+  if (CULL) for (const c of [...root.children]) if (!KEEP.has(c.name)) root.remove(c);
+
+  if (PAL) root.traverse(o => {
+    if (!o.isMesh) return;
+    for (const m of (Array.isArray(o.material) ? o.material : [o.material])) {
+      if (!m) continue;
+      const p = PALETTE[(m.name || '').trim()];
+      if (p) { m.color.setHex(p.color); m.metalness = p.metalness; m.roughness = p.roughness; }
+      if ((m.name || '').trim().startsWith('Eye')) m.emissiveIntensity = n('eyei', 3.6);
+    }
+  });
+
+  scene.add(root);
+  root.updateMatrixWorld(true);
+
+  if (CLIP != null && gltf.animations[+CLIP]) {
+    const mx = new THREE.AnimationMixer(root);
+    mx.clipAction(gltf.animations[+CLIP]).play();
+    mx.update(TIME);
+    root.updateMatrixWorld(true);
+  }
+
+  let target = root;
+  if (SUB) root.traverse(o => { if (o.name === SUB) target = o; });
+  const box = new THREE.Box3().setFromObject(target);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  center.x += n('ox', 0); center.y += n('oy', 0); center.z += n('oz', 0);
+  report.frame = { on: target.name, size: size.toArray().map(v => +v.toFixed(2)), center: center.toArray().map(v => +v.toFixed(2)) };
+
+  const camera = new THREE.PerspectiveCamera(n('fov', 35), W / H, 0.01, 5000);
+  const radius = size.length() / 2;
+  const dist = (radius / Math.sin(camera.fov * Math.PI / 360)) / FILL;
+  camera.position.set(
+    center.x + dist * Math.cos(PITCH) * Math.sin(YAW),
+    center.y + dist * Math.sin(PITCH),
+    center.z + dist * Math.cos(PITCH) * Math.cos(YAW));
+  camera.lookAt(center);
+  camera.near = dist / 100; camera.far = dist * 20;
+  camera.updateProjectionMatrix();
+  report.cam = camera.position.toArray().map(v => +v.toFixed(2));
+  report.dist = +dist.toFixed(2);
+
+  const BLOOM = n('bloom', 0.6);
+  if (BLOOM > 0) {
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), BLOOM, n('bradius', 0.5), n('bthresh', 0.85)));
+    composer.addPass(new OutputPass());
+    composer.render();
+  } else {
+    renderer.render(scene, camera);
+  }
+  window.__root = root; window.__probe = report; window.__ready = true;
+}, undefined, e => { window.__probe = { error: String(e) }; window.__ready = true; });
+</script>
+</body>
+</html>

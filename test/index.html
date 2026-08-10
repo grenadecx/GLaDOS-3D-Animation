@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>GLaDOS 3D Card — Test</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0; min-height: 100vh; background: #0b0c10; color: #e6e6e6;
+      font-family: system-ui, sans-serif;
+      display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 32px 16px;
+    }
+    h1 { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: .02em; }
+    #card-container { width: 520px; max-width: 100%; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }
+    button {
+      padding: 7px 14px; border: 1px solid #2a2d35; background: #16181d; color: #ddd;
+      border-radius: 6px; cursor: pointer; font-size: 13px;
+    }
+    button:hover { background: #202329; }
+    button[aria-pressed="true"] { border-color: #ff8c1a; color: #ffb060; }
+    /* Media and voice are independent entities — both can be on at once. When the
+       assistant is busy it wins, so the music toggle is shown as overridden
+       rather than being switched off behind the user's back. */
+    button[data-overridden="true"] { border-color: #3a3d45; color: #6b7280; text-decoration: line-through; }
+
+    .bpm {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 14px; border: 1px solid #2a2d35; border-radius: 6px; background: #16181d;
+      font-size: 13px; opacity: 0.45; transition: opacity .2s;
+    }
+    .bpm[data-live="true"] { opacity: 1; border-color: #1db954; }
+    .bpm input { width: 150px; accent-color: #1db954; }
+    .bpm output { font: 13px/1 ui-monospace, monospace; min-width: 62px; color: #9aa2ad; }
+    /* Pips flash on the beat at the current BPM, so the model's bounce can be
+       checked against a known tempo rather than by eye alone. */
+    .pip { width: 10px; height: 10px; border-radius: 50%; background: #1db954; opacity: .15; }
+    .bpm[data-live="true"] .pip { animation: beat var(--beat, .5s) steps(1, end) infinite; }
+    @keyframes beat { 0%, 40% { opacity: 1; } 41%, 100% { opacity: .15; } }
+
+    #resolved { font: 12px/1.6 ui-monospace, monospace; color: #9aa2ad; text-align: center; }
+    #resolved b { color: #e6e6e6; font-weight: 600; }
+    #resolved .over { color: #6b7280; text-decoration: line-through; }
+    #log { font: 11px/1.6 ui-monospace, monospace; color: #6b7280; white-space: pre-wrap; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>GLaDOS 3D Card — Test</h1>
+  <div id="card-container"></div>
+  <div class="controls" id="states"></div>
+  <div class="controls">
+    <button id="music">Music ▶ · green</button>
+    <label class="bpm" id="bpm-wrap">
+      <span class="pip"></span>
+      <span>BPM</span>
+      <input id="bpm" type="range" min="60" max="200" step="1" value="120" />
+      <output id="bpm-out">120</output>
+    </label>
+  </div>
+  <div id="resolved"></div>
+  <div id="log"></div>
+
+  <script type="module">
+    const logEl = document.getElementById('log');
+    const log = (m) => { console.log(m); logEl.textContent += m + '\n'; };
+    window.addEventListener('error', (e) => log('ERROR: ' + e.message));
+
+    // Minimal stand-in for the HA `hass` object: the card only reads `.states`.
+    const hass = { states: {} };
+    const ENTITY = 'assist_satellite.glados';
+    const MEDIA = 'media_player.glados';
+    const BPM = 'sensor.glados_bpm';
+
+    // Voice-assistant states, and the eye colour each should produce.
+    // Dancing is the fifth state — reached by playing media while idle.
+    const STATES = [
+      ['Idle · amber', 'idle'],
+      ['Listening · blue', 'listening'],
+      ['Processing · orange', 'processing'],
+      ['Responding · red', 'responding'],
+    ];
+
+    /** Card-internal state name each voice keyword lands on, for the readout below. */
+    const RESOLVES_TO = {
+      idle: 'standby',
+      listening: 'active-listening',
+      processing: 'computing',
+      responding: 'speaking',
+    };
+
+    // Any card option can be overridden from the query string, e.g. ?zoom=1.2&yaw=-30
+    const overrides = {};
+    for (const [k, v] of new URLSearchParams(location.search)) {
+      overrides[k] = isNaN(Number(v)) ? v : Number(v);
+    }
+
+    await import('../dist/glados-3d-card.js');
+    log('card module loaded');
+
+    const card = document.createElement('glados-3d-card');
+    card.setConfig({
+      type: 'glados-3d-card',
+      entity: ENTITY,
+      media_entity: MEDIA,
+      bpm_entity: BPM,
+      model_url: '/models/GLaDOS.glb',
+      aspect_ratio: 4 / 3,
+      ...overrides,
+    });
+    document.getElementById('card-container').appendChild(card);
+
+    const bpmInput = document.getElementById('bpm');
+    const bpmOut = document.getElementById('bpm-out');
+    const bpmWrap = document.getElementById('bpm-wrap');
+    const musicBtn = document.getElementById('music');
+    const resolvedEl = document.getElementById('resolved');
+
+    let current = 'idle';
+    let music = false;
+
+    function push() {
+      const bpm = Number(bpmInput.value);
+
+      hass.states[ENTITY] = { entity_id: ENTITY, state: current };
+      hass.states[MEDIA] = { entity_id: MEDIA, state: music ? 'playing' : 'paused' };
+      hass.states[BPM] = { entity_id: BPM, state: String(bpm) };
+      card.hass = { ...hass };
+
+      // Dancing only happens when the assistant has nothing to do, so the beat
+      // readout follows the same rule the card does.
+      const dancing = music && current === 'idle';
+      const overridden = music && current !== 'idle';
+
+      bpmOut.textContent = bpm + (dancing ? '' : ' —');
+      bpmWrap.dataset.live = String(dancing);
+      bpmWrap.style.setProperty('--beat', (60 / bpm) + 's');
+
+      musicBtn.dataset.overridden = String(overridden);
+      musicBtn.textContent = music
+        ? (overridden ? 'Music ⏸ · overridden' : 'Music ⏸ · green')
+        : 'Music ▶ · green';
+
+      for (const b of document.querySelectorAll('#states button')) {
+        b.setAttribute('aria-pressed', String(b.dataset.state === current));
+      }
+
+      // Spell out how the two entities resolve, since both can be active at once.
+      const media = music ? 'playing' : 'paused';
+      resolvedEl.innerHTML =
+        `voice <b>${current}</b>  +  media <span class="${overridden ? 'over' : ''}">${media}</span>` +
+        `  &rarr;  <b>${dancing ? 'dancing' : RESOLVES_TO[current]}</b>` +
+        (overridden ? '   <span class="over">music ignored while the assistant is busy</span>' : '');
+
+      window.__state = current;
+    }
+
+    const states = document.getElementById('states');
+    for (const [label, value] of STATES) {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.dataset.state = value;
+      b.onclick = () => { current = value; push(); };
+      states.appendChild(b);
+    }
+
+    musicBtn.onclick = () => {
+      music = !music;
+      musicBtn.setAttribute('aria-pressed', String(music));
+      push();
+    };
+
+    bpmInput.oninput = push;
+
+    push();
+    log('ready — model: /models/GLaDOS.glb');
+
+    // Hooks for headless screenshot runs.
+    window.__setState = (s) => { current = s; push(); };
+    window.__setMusic = (on) => { if (on !== music) musicBtn.click(); };
+    window.__setBpm = (v) => { bpmInput.value = String(v); push(); };
+    setTimeout(() => { window.__ready = true; }, 2500);
+  </script>
+</body>
+</html>
