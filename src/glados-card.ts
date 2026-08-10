@@ -29,7 +29,7 @@ const DEFAULTS: Omit<Glados3DConfig, 'type'> = {
   media_entity: '',
   bpm_entity: '',
   zoom: 1.0,
-  model_url: '/hacsfiles/GLaDOS-3D-Animation/models/GLaDOS.glb',
+  model_url: '/hacsfiles/GLaDOS-3D-Animation/GLaDOS.glb',
   bg_color: '#0d0f14',
   yaw: -20,
   pitch: 5,

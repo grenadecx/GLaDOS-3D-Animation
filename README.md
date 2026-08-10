@@ -44,9 +44,8 @@ The model is downloaded alongside the card, so `model_url` needs no override.
 
 ## Manual install
 
-**1. Build** — or skip this and unzip `glados-3d-card.zip` from the
-[latest release](https://github.com/grenadecx/GLaDOS-3D-Animation/releases),
-which has the same contents as `dist/`:
+**1. Build** — or skip this and download `glados-3d-card.js` and `GLaDOS.glb`
+from the [latest release](https://github.com/grenadecx/GLaDOS-3D-Animation/releases):
 
 ```bash
 npm install
@@ -57,8 +56,7 @@ npm run build
 
 ```bash
 cp dist/glados-3d-card.js /path/to/homeassistant/www/
-mkdir -p /path/to/homeassistant/www/models
-cp models/GLaDOS.glb /path/to/homeassistant/www/models/
+cp dist/GLaDOS.glb /path/to/homeassistant/www/
 ```
 
 **3. Register the resource** — Settings → Dashboards → ⋮ → **Resources** → *Add
@@ -79,7 +77,7 @@ type: custom:glados-3d-card
 entity: assist_satellite.living_room
 media_entity: media_player.living_room
 bpm_entity: sensor.living_room_bpm
-model_url: /local/models/GLaDOS.glb
+model_url: /local/GLaDOS.glb
 ```
 
 ## If the card doesn't appear
@@ -98,7 +96,7 @@ model_url: /local/models/GLaDOS.glb
 | `entity` | string | *required* | Voice assistant entity ID |
 | `media_entity` | string | — | Media player entity, for playback detection |
 | `bpm_entity` | string | — | BPM sensor entity (defaults to 120 BPM) |
-| `model_url` | string | `/hacsfiles/GLaDOS-3D-Animation/models/GLaDOS.glb` | Path to the GLB |
+| `model_url` | string | `/hacsfiles/GLaDOS-3D-Animation/GLaDOS.glb` | Path to the GLB |
 | `bg_color` | string | `#0d0f14` | Scene background |
 | `aspect_ratio` | number | `1.3333` | Card width ÷ height |
 | `zoom` | number | `1` | Framing multiplier; >1 moves in |
