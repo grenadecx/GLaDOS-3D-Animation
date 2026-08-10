@@ -22,8 +22,6 @@ export interface Glados3DConfig extends LovelaceCardConfig {
   max_fps?: number;
   /** Card width:height, used to give the canvas a height inside Lovelace. */
   aspect_ratio?: number;
-  /** Portal rings during speaking/computing. Off by default. */
-  portals?: boolean;
 }
 
 export type GladosState =

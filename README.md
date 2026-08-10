@@ -49,7 +49,6 @@ GLaDOS model with Three.js, driven by voice assistant entity states and music sy
 | `pan_x` / `pan_y` | number | `-0.5` / `0.5` | Slide the framing, in model radii |
 | `bloom` | number | `0.9` | Eye bloom strength; `0` disables post-processing |
 | `max_fps` | number | `60` | Frame rate cap; `0` renders every animation frame |
-| `portals` | boolean | `false` | Portal rings while speaking/computing |
 
 ## States
 

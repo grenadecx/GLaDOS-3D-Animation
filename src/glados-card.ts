@@ -16,7 +16,6 @@ import { loadModel, ModelHandles } from './model.js';
 import { initAnimation, AnimationHandles } from './animation.js';
 import { determineState, isMediaPlaying } from './states.js';
 import { initMusic, parseBpmEntityValue, MusicHandles } from './music.js';
-import { createPortals, PortalHandles } from './portal.js';
 
 (window as any).customCards = (window as any).customCards || [];
 (window as any).customCards.push({
@@ -39,7 +38,6 @@ const DEFAULTS: Omit<Glados3DConfig, 'type'> = {
   bloom: 0.9,
   max_fps: 60,
   aspect_ratio: 4 / 3,
-  portals: false,
 };
 
 /** Fraction of the vertical view the head fills at zoom 1. */
@@ -67,7 +65,6 @@ export class Glados3DCard extends LitElement {
   private _model: ModelHandles | null = null;
   private _animation: AnimationHandles = initAnimation();
   private _music: MusicHandles = initMusic();
-  private _portals: PortalHandles = createPortals();
 
   private _hass: HomeAssistant | undefined;
   private _lastVoice: string | undefined;
@@ -126,7 +123,6 @@ export class Glados3DCard extends LitElement {
     if (!this._canvas) return;
 
     this._scene = initScene(this._canvas, this._config);
-    this._scene.scene.add(this._portals.group);
 
     this._resizeObserver = new ResizeObserver(() => {
       this._scene?.resize();
@@ -249,14 +245,6 @@ export class Glados3DCard extends LitElement {
     const playing = isMediaPlaying(media);
     if (playing !== this._music.isPlaying) this._music.setPlaying(playing);
     if (bpmChanged) this._music.setBpm(bpm);
-
-    if (this._config.portals) {
-      this._portals.updateVisibility(
-        this._gladosState === 'speaking' ||
-        this._gladosState === 'computing' ||
-        this._gladosState === 'dancing'
-      );
-    }
   }
 
   private _startLoop(): void {
@@ -285,9 +273,6 @@ export class Glados3DCard extends LitElement {
 
       if (!this._scene) return;
       if (this._model) this._animation.apply(this._model.rig);
-      if (this._portals.group.visible) {
-        this._portals.updateState(this._gladosState, this._music.beat.intensity);
-      }
       this._scene.render();
       this._renderedFrames++;
     };
@@ -318,8 +303,6 @@ export class Glados3DCard extends LitElement {
       this._config.pan_x ?? DEFAULTS.pan_x!,
       this._config.pan_y ?? DEFAULTS.pan_y!
     );
-    this._portals.group.position.copy(center);
-    this._portals.group.scale.setScalar(radius);
   }
 
   private _destroy(): void {
