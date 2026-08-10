@@ -148,7 +148,10 @@ node test/server.mjs   # static server on :3000
   toggle, and a BPM slider that feeds the simulated `sensor.glados_bpm`. The pip
   beside the slider flashes at the set tempo, so the model's bounce can be checked
   against a known beat; it lights up only while the card is actually Dancing. Any
-  card option can be overridden from the query string, e.g. `/test?zoom=1.3&bloom=0`.
+  card option can be overridden from the query string, e.g. `/test?max_fps=30`, `?bloom=0`, `?zoom=1.3`.
+  An FPS readout in the card’s top-left corner reports frames the card actually
+  drew — not the browser’s animation-frame rate — alongside the active cap, and
+  shows `paused` when the card is scrolled out of view.
 - `http://localhost:3000/test/probe.html` — standalone model inspector for framing,
   lighting and material questions, with no card or rebuild in the loop. See the
   comment at the top of that file for its parameters.

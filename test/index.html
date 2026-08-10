@@ -11,7 +11,19 @@
       display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 32px 16px;
     }
     h1 { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: .02em; }
-    #card-container { width: 520px; max-width: 100%; }
+    #card-container { width: 520px; max-width: 100%; position: relative; }
+
+    /* Sits over the card's top-left corner. Reads the card's own rendered-frame
+       counter, so it reports what was actually drawn rather than the browser's
+       animation-frame rate — those diverge exactly when max_fps is working. */
+    #fps {
+      position: absolute; top: 8px; left: 8px; z-index: 2; pointer-events: none;
+      padding: 4px 8px; border-radius: 5px;
+      background: rgba(6,8,12,.72); border: 1px solid #2a2d35;
+      font: 11px/1.45 ui-monospace, monospace; color: #7ee2a8; white-space: pre;
+    }
+    #fps .dim { color: #6b7280; }
+    #fps[data-paused="true"] { color: #f0a35e; }
     .controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }
     button {
       padding: 7px 14px; border: 1px solid #2a2d35; background: #16181d; color: #ddd;
@@ -46,7 +58,7 @@
 </head>
 <body>
   <h1>GLaDOS 3D Card — Test</h1>
-  <div id="card-container"></div>
+  <div id="card-container"><div id="fps">—</div></div>
   <div class="controls" id="states"></div>
   <div class="controls">
     <button id="music">Music ▶ · green</button>
@@ -88,7 +100,8 @@
       responding: 'speaking',
     };
 
-    // Any card option can be overridden from the query string, e.g. ?zoom=1.2&yaw=-30
+    // Any card option can be overridden from the query string, e.g.
+    //   ?max_fps=30   ?max_fps=0 (uncapped)   ?bloom=0   ?zoom=1.2&yaw=-30
     const overrides = {};
     for (const [k, v] of new URLSearchParams(location.search)) {
       overrides[k] = isNaN(Number(v)) ? v : Number(v);
@@ -173,6 +186,29 @@
 
     push();
     log('ready — model: /models/GLaDOS.glb');
+
+    // --- FPS readout -------------------------------------------------------
+    const fpsEl = document.getElementById('fps');
+    const cap = card._config?.max_fps ?? 60;
+    const capLabel = cap > 0 ? `cap ${cap}` : 'uncapped';
+    let lastFrames = card.renderedFrames;
+    let lastAt = performance.now();
+
+    setInterval(() => {
+      const now = performance.now();
+      const frames = card.renderedFrames;
+      const fps = (frames - lastFrames) / ((now - lastAt) / 1000);
+      lastFrames = frames;
+      lastAt = now;
+
+      // Zero means the IntersectionObserver has parked the loop — scroll the
+      // card out of view and this should drop to 0 and stay there.
+      const paused = fps < 0.5;
+      fpsEl.dataset.paused = String(paused);
+      fpsEl.innerHTML = paused
+        ? `paused  <span class="dim">off-screen</span>`
+        : `${fps.toFixed(0).padStart(3)} fps  <span class="dim">${capLabel}</span>`;
+    }, 500);
 
     // Hooks for headless screenshot runs.
     window.__setState = (s) => { current = s; push(); };

@@ -78,6 +78,7 @@ export class Glados3DCard extends LitElement {
   private _resizeObserver: ResizeObserver | null = null;
   private _visibilityObserver: IntersectionObserver | null = null;
   private _lastFrameTime = 0;
+  private _renderedFrames = 0;
   private _onScreen = true;
   private _destroyed = false;
 
@@ -88,6 +89,14 @@ export class Glados3DCard extends LitElement {
 
   public getCardSize(): number {
     return 6;
+  }
+
+  /** Frames actually drawn, as opposed to animation frames offered. Sampling the
+   *  delta over time is the only honest way to see the effect of `max_fps` and
+   *  the off-screen pause — the browser's own rAF rate says nothing about either.
+   *  Instrumentation only; the card never reads it. */
+  public get renderedFrames(): number {
+    return this._renderedFrames;
   }
 
   connectedCallback(): void {
@@ -280,6 +289,7 @@ export class Glados3DCard extends LitElement {
         this._portals.updateState(this._gladosState, this._music.beat.intensity);
       }
       this._scene.render();
+      this._renderedFrames++;
     };
     this._frameId = requestAnimationFrame(loop);
   }
