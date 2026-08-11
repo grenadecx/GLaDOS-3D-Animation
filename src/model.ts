@@ -134,7 +134,7 @@ export function loadModel(scene: THREE.Scene, modelUrl: string): Promise<ModelHa
         });
       },
       undefined,
-      (error) => reject(error)
+      (error) => reject(error instanceof Error ? error : new Error(String(error)))
     );
   });
 }

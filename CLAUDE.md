@@ -15,6 +15,8 @@ A custom Home Assistant Lovelace card that renders a 3D animated GLaDOS model
 npm install
 npm run build          # bundle to dist/glados-3d-card.js
 npm start              # watch mode
+npm run typecheck      # tsc --noEmit — the build does NOT fail on type errors
+npm run lint           # eslint, type-checked rules
 node test/server.mjs   # dev server on :3000 → /test, /test/probe.html
 ```
 

@@ -18,14 +18,29 @@ import { determineState, isMediaPlaying } from './states.js';
 import { initMusic, parseBpmEntityValue, MusicHandles } from './music.js';
 import './editor.js';
 
-(window as any).customCards = (window as any).customCards || [];
-(window as any).customCards.push({
+/** HA's card picker reads this global; the frontend declares no type for it. */
+interface CustomCard {
+  type: string;
+  name: string;
+  description?: string;
+}
+declare global {
+  interface Window {
+    customCards?: CustomCard[];
+  }
+}
+
+window.customCards = window.customCards ?? [];
+window.customCards.push({
   type: 'glados-3d-card',
   name: 'GLaDOS 3D Card',
   description: '3D animated GLaDOS card with HA entity sync and music reactivity',
 });
 
-const DEFAULTS: Omit<Glados3DConfig, 'type'> = {
+/** `satisfies` rather than a type annotation: Glados3DConfig inherits an
+ *  index signature from LovelaceCardConfig, which would widen every default
+ *  to `any` and lose the types the call sites rely on. */
+const DEFAULTS = {
   entity: 'conversation.default',
   media_entity: '',
   bpm_entity: '',
@@ -40,7 +55,7 @@ const DEFAULTS: Omit<Glados3DConfig, 'type'> = {
   max_fps: 60,
   aspect_ratio: 4 / 3,
   dance_style: DEFAULT_DANCE_STYLE,
-};
+} satisfies Omit<Glados3DConfig, 'type'>;
 
 /** Fraction of the vertical view the head fills at zoom 1. */
 const BASE_FILL = 0.375;
@@ -87,7 +102,7 @@ export class Glados3DCard extends LitElement {
 
   setConfig(config: Glados3DConfig): void {
     if (!config || !config.entity) throw new Error('glados-3d-card: "entity" is required');
-    this._config = { ...DEFAULTS, ...config } as Glados3DConfig;
+    this._config = { ...DEFAULTS, ...config };
     this._animation.setStyle(this._config.dance_style);
   }
 
@@ -257,7 +272,7 @@ export class Glados3DCard extends LitElement {
   private _startLoop(): void {
     if (this._frameId || this._destroyed || !this._onScreen) return;
 
-    const maxFps = this._config?.max_fps ?? DEFAULTS.max_fps!;
+    const maxFps = this._config?.max_fps ?? DEFAULTS.max_fps;
     const minFrameMs = maxFps > 0 ? 1000 / maxFps - FRAME_SLACK_MS : 0;
 
     const loop = (timestamp: number) => {
@@ -289,7 +304,7 @@ export class Glados3DCard extends LitElement {
   private async _loadModel(): Promise<void> {
     if (!this._scene) return;
     try {
-      this._model = await loadModel(this._scene.scene, this._config.model_url || DEFAULTS.model_url!);
+      this._model = await loadModel(this._scene.scene, this._config.model_url || DEFAULTS.model_url);
       this._frameModel();
     } catch (error) {
       console.error('[glados-3d-card] model load failed:', error);
@@ -307,8 +322,8 @@ export class Glados3DCard extends LitElement {
       BASE_FILL * (this._config.zoom ?? 1),
       (this._config.yaw ?? 0) * deg,
       (this._config.pitch ?? 0) * deg,
-      this._config.pan_x ?? DEFAULTS.pan_x!,
-      this._config.pan_y ?? DEFAULTS.pan_y!
+      this._config.pan_x ?? DEFAULTS.pan_x,
+      this._config.pan_y ?? DEFAULTS.pan_y
     );
   }
 

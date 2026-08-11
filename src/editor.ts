@@ -51,7 +51,7 @@ function aspectOptions(ratio?: number) {
   return [...options, { value: CUSTOM_ASPECT, label: `Custom — ${ratio!.toFixed(3)} (from YAML)` }];
 }
 
-const buildSchema = (config: Glados3DConfig) => [
+const buildSchema = (config: { aspect_ratio?: number }) => [
   { name: 'entity', required: true, selector: { entity: { domain: ['assist_satellite', 'conversation'] } } },
   { name: 'media_entity', selector: { entity: { domain: 'media_player' } } },
   { name: 'bpm_entity', selector: { entity: { domain: 'sensor' } } },
@@ -90,10 +90,11 @@ function hexToRgb(hex?: string): Rgb | undefined {
 }
 
 function rgbToHex(rgb: unknown): string | undefined {
-  if (!Array.isArray(rgb) || rgb.length !== 3 || rgb.some((c) => typeof c !== 'number')) {
+  const channels: unknown[] = Array.isArray(rgb) ? rgb : [];
+  if (channels.length !== 3 || !channels.every((c) => typeof c === 'number')) {
     return undefined;
   }
-  return `#${rgb.map((c) => Math.max(0, Math.min(255, Math.round(c))).toString(16).padStart(2, '0')).join('')}`;
+  return `#${channels.map((c) => Math.max(0, Math.min(255, Math.round(c))).toString(16).padStart(2, '0')).join('')}`;
 }
 
 const LABELS: Record<string, string> = {
@@ -148,8 +149,8 @@ export class Glados3DCardEditor extends LitElement {
 
   private _computeLabel = (schema: { name: string }): string => LABELS[schema.name] ?? schema.name;
 
-  private _valueChanged(ev: CustomEvent): void {
-    const config = { ...ev.detail.value };
+  private _valueChanged = (ev: CustomEvent<{ value: Record<string, unknown> }>): void => {
+    const config: Record<string, unknown> = { ...ev.detail.value };
     const hex = rgbToHex(config.bg_color);
     if (hex) {
       config.bg_color = hex;
@@ -173,5 +174,5 @@ export class Glados3DCardEditor extends LitElement {
         composed: true,
       }),
     );
-  }
+  };
 }
