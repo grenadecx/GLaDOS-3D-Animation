@@ -60,6 +60,8 @@ const buildSchema = (config: Glados3DConfig) => [
     name: 'aspect_ratio',
     selector: { select: { mode: 'dropdown', options: aspectOptions(config.aspect_ratio) } },
   },
+  { name: 'bg_color', selector: { color_rgb: {} } },
+  { name: 'model_url', selector: { text: {} } },
   {
     name: '',
     type: 'grid',
@@ -73,8 +75,6 @@ const buildSchema = (config: Glados3DConfig) => [
       { name: 'max_fps', selector: { number: { min: 0, max: 120, step: 5, mode: 'slider' } } },
     ],
   },
-  { name: 'bg_color', selector: { color_rgb: {} } },
-  { name: 'model_url', selector: { text: {} } },
 ];
 
 type Rgb = [number, number, number];
