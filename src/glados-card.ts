@@ -13,7 +13,7 @@ import { HomeAssistant } from 'custom-card-helpers';
 import { Glados3DConfig, GladosState } from './types.js';
 import { initScene, frameCamera, SceneHandles } from './scene.js';
 import { loadModel, ModelHandles } from './model.js';
-import { initAnimation, AnimationHandles } from './animation.js';
+import { initAnimation, AnimationHandles, DEFAULT_DANCE_STYLE } from './animation.js';
 import { determineState, isMediaPlaying } from './states.js';
 import { initMusic, parseBpmEntityValue, MusicHandles } from './music.js';
 import './editor.js';
@@ -39,6 +39,7 @@ const DEFAULTS: Omit<Glados3DConfig, 'type'> = {
   bloom: 0.9,
   max_fps: 60,
   aspect_ratio: 4 / 3,
+  dance_style: DEFAULT_DANCE_STYLE,
 };
 
 /** Fraction of the vertical view the head fills at zoom 1. */
@@ -87,6 +88,7 @@ export class Glados3DCard extends LitElement {
   setConfig(config: Glados3DConfig): void {
     if (!config || !config.entity) throw new Error('glados-3d-card: "entity" is required');
     this._config = { ...DEFAULTS, ...config } as Glados3DConfig;
+    this._animation.setStyle(this._config.dance_style);
   }
 
   public getCardSize(): number {

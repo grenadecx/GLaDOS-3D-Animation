@@ -27,14 +27,18 @@ node test/server.mjs   # dev server on :3000 → /test, /test/probe.html
 | `src/scene.ts` | Three.js scene setup, PMREM environment |
 | `src/model.ts` | GLB load, origin prune, material palette fix, wire re-parent |
 | `src/states.ts` | State machine: Standby → Listening → Computing → Speaking → Dancing |
-| `src/animation.ts` | Travelling-wave dance choreography on the bone chain |
+| `src/animation.ts` | Dance moves on the bone chain, plus the routine that cuts between them |
 | `src/music.ts` | Beat clock; drives BPM from a sensor entity |
 | `src/types.ts` | Shared TypeScript types |
 
 ## Key Config Fields
 
 `entity`, `media_entity`, `bpm_entity`, `model_url`, `bg_color`, `aspect_ratio`,
-`zoom`, `yaw`, `pitch`, `pan_x`, `pan_y`, `bloom`, `max_fps`
+`zoom`, `yaw`, `pitch`, `pan_x`, `pan_y`, `bloom`, `max_fps`, `dance_style`
+
+`dance_style` is `auto` (default — a routine cuts between all moves on 8-beat
+phrase boundaries) or one pinned move: `sway`, `bounce`, `headbang`, `wave`. See
+`CHOREOGRAPHY` and `initRoutine` in `src/animation.ts`.
 
 ## Dev Tips
 

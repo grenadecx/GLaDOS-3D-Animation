@@ -35,6 +35,8 @@ export interface GladosRig {
   rest: Map<THREE.Object3D, THREE.Quaternion>;
   /** Head's bind-pose translation, so positional offsets never accumulate. */
   headRestPosition: THREE.Vector3;
+  /** Head's bind-pose scale, so squash and stretch never accumulate. */
+  headRestScale: THREE.Vector3;
 }
 
 export interface ModelHandles {
@@ -194,8 +196,12 @@ function buildRig(byName: Map<string, THREE.Object3D>, scene: THREE.Scene): Glad
   }
 
   const headRestPosition = head ? head.position.clone() : new THREE.Vector3();
+  const headRestScale = head ? head.scale.clone() : new THREE.Vector3(1, 1, 1);
 
-  return { head, neck, spine, eyeMesh, eyeMaterial, eyeCanvas, eyeTexture, eyeLight, rest, headRestPosition };
+  return {
+    head, neck, spine, eyeMesh, eyeMaterial, eyeCanvas, eyeTexture, eyeLight, rest,
+    headRestPosition, headRestScale,
+  };
 }
 
 /** Re-parent each loose cable onto whichever bone it sits closest to. `attach`
