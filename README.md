@@ -109,6 +109,23 @@ Card**, or *Edit* on an existing card — or in YAML directly.
 | `bloom` | number | `0.9` | Eye bloom strength; `0` disables post-processing |
 | `max_fps` | number | `60` | Frame rate cap; `0` renders every animation frame |
 
+### BPM source — SongBPM
+
+The card needs a real-time BPM sensor for music sync. The recommended source is
+the [SongBPM integration](https://github.com/Axildor/GLaDOS-AI-Animation) — it
+extracts the current track's BPM so GLaDOS dances at the exact tempo.
+
+**1.** Install SongBPM via HACS (or from source) and configure it to pull BPM from
+your music player.
+
+**2.** Set `bpm_entity` to SongBPM's output sensor, e.g.:
+
+```yaml
+bpm_entity: sensor.universal_music_bpm
+```
+
+If `bpm_entity` is left empty the card falls back to a fixed **120 BPM**.
+
 ## States
 
 Five states, with the eye colours taken from the 2D reference card
