@@ -50,6 +50,20 @@
     .bpm[data-live="true"] .pip { animation: beat var(--beat, .5s) steps(1, end) infinite; }
     @keyframes beat { 0%, 40% { opacity: 1; } 41%, 100% { opacity: .15; } }
 
+    .style {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 14px; border: 1px solid #2a2d35; border-radius: 6px; background: #16181d;
+      font-size: 13px; opacity: 0.45; transition: opacity .2s;
+    }
+    .style[data-live="true"] { opacity: 1; border-color: #1db954; }
+    .style select {
+      background: #0b0c10; color: #ddd; border: 1px solid #2a2d35;
+      border-radius: 5px; padding: 3px 6px; font-size: 13px;
+    }
+    /* Which move the routine has landed on, and whether it is mid-cut. */
+    .style output { font: 12px/1 ui-monospace, monospace; min-width: 108px; color: #9aa2ad; }
+    .style output[data-cutting="true"] { color: #1db954; }
+
     #resolved { font: 12px/1.6 ui-monospace, monospace; color: #9aa2ad; text-align: center; }
     #resolved b { color: #e6e6e6; font-weight: 600; }
     #resolved .over { color: #6b7280; text-decoration: line-through; }
@@ -67,6 +81,17 @@
       <span>BPM</span>
       <input id="bpm" type="range" min="60" max="200" step="1" value="120" />
       <output id="bpm-out">120</output>
+    </label>
+    <label class="style" id="style-wrap">
+      <span>Style</span>
+      <select id="dance-style">
+        <option value="auto">Auto</option>
+        <option value="sway">Sway</option>
+        <option value="bounce">Bounce</option>
+        <option value="headbang">Headbang</option>
+        <option value="wave">Wave</option>
+      </select>
+      <output id="move-out">—</output>
     </label>
   </div>
   <div id="resolved"></div>
@@ -111,7 +136,7 @@
     log('card module loaded');
 
     const card = document.createElement('glados-3d-card');
-    card.setConfig({
+    const config = {
       type: 'glados-3d-card',
       entity: ENTITY,
       media_entity: MEDIA,
@@ -119,14 +144,20 @@
       model_url: '/models/GLaDOS.glb',
       aspect_ratio: 4 / 3,
       ...overrides,
-    });
+    };
+    card.setConfig(config);
     document.getElementById('card-container').appendChild(card);
 
     const bpmInput = document.getElementById('bpm');
     const bpmOut = document.getElementById('bpm-out');
     const bpmWrap = document.getElementById('bpm-wrap');
     const musicBtn = document.getElementById('music');
+    const styleWrap = document.getElementById('style-wrap');
+    const styleSelect = document.getElementById('dance-style');
+    const moveOut = document.getElementById('move-out');
     const resolvedEl = document.getElementById('resolved');
+
+    styleSelect.value = config.dance_style ?? 'auto';
 
     let current = 'idle';
     let music = false;
@@ -147,6 +178,7 @@
       bpmOut.textContent = bpm + (dancing ? '' : ' —');
       bpmWrap.dataset.live = String(dancing);
       bpmWrap.style.setProperty('--beat', (60 / bpm) + 's');
+      styleWrap.dataset.live = String(dancing);
 
       musicBtn.dataset.overridden = String(overridden);
       musicBtn.textContent = music
@@ -181,6 +213,25 @@
       musicBtn.setAttribute('aria-pressed', String(music));
       push();
     };
+
+    // Re-running setConfig is enough to swap choreography: the card hands the new
+    // style straight to the animation layer, and the scene is never rebuilt.
+    styleSelect.onchange = () => {
+      config.dance_style = styleSelect.value;
+      card.setConfig(config);
+      window.__danceStyle = styleSelect.value;
+    };
+
+    // On Auto the routine picks the move, so show which one it has landed on and
+    // flag the cross-fade between them.
+    setInterval(() => {
+      const move = card._animation.danceMove;
+      const blend = card._animation.danceBlend;
+      const cutting = blend < 1;
+      moveOut.textContent = cutting ? `${move} ${Math.round(blend * 100)}%` : move;
+      moveOut.dataset.cutting = String(cutting);
+      window.__danceMove = move;
+    }, 100);
 
     bpmInput.oninput = push;
 

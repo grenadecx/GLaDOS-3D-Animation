@@ -22,7 +22,20 @@ export interface Glados3DConfig extends LovelaceCardConfig {
   max_fps?: number;
   /** Card width:height, used to give the canvas a height inside Lovelace. */
   aspect_ratio?: number;
+  /** Choreography used while Dancing — a pinned move, or `auto` for the routine. */
+  dance_style?: DanceStyle;
 }
+
+/** One choreography preset. */
+export type DanceMove =
+  | 'sway'      // travelling wave, the body following the head
+  | 'bounce'    // vertical bounce with squash and stretch
+  | 'headbang'  // sharp head flex on the downbeat
+  | 'wave';     // domino ripple running down the chain
+
+/** What `dance_style` accepts: one move held forever, or the routine that cuts
+ *  between all of them on the music's phrase boundaries. */
+export type DanceStyle = DanceMove | 'auto';
 
 export type GladosState =
   | 'standby'           // idle

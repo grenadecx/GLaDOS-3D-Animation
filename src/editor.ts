@@ -10,12 +10,26 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { HomeAssistant } from 'custom-card-helpers';
-import { Glados3DConfig } from './types.js';
+import { Glados3DConfig, DanceStyle } from './types.js';
+
+/** Typed as a full record, so adding a choreography preset without a label here
+ *  is a compile error rather than a style missing from the dropdown. */
+const DANCE_STYLE_LABELS: Record<DanceStyle, string> = {
+  'auto': 'Auto — cut between all moves on the beat (default)',
+  'sway': 'Sway — travelling wave',
+  'bounce': 'Bounce — vertical, with squash and stretch',
+  'headbang': 'Headbang — sharp head flex on the beat',
+  'wave': 'Wave — domino ripple down the chain',
+};
+
+const DANCE_STYLE_OPTIONS = Object.entries(DANCE_STYLE_LABELS)
+  .map(([value, label]) => ({ value, label }));
 
 const SCHEMA = [
   { name: 'entity', required: true, selector: { entity: { domain: ['assist_satellite', 'conversation'] } } },
   { name: 'media_entity', selector: { entity: { domain: 'media_player' } } },
   { name: 'bpm_entity', selector: { entity: { domain: 'sensor' } } },
+  { name: 'dance_style', selector: { select: { mode: 'dropdown', options: DANCE_STYLE_OPTIONS } } },
   {
     name: '',
     type: 'grid',
@@ -57,6 +71,7 @@ const LABELS: Record<string, string> = {
   entity: 'Voice assistant entity (required)',
   media_entity: 'Media player',
   bpm_entity: 'BPM sensor',
+  dance_style: 'Dance style',
   zoom: 'Zoom',
   aspect_ratio: 'Aspect ratio',
   yaw: 'Yaw (°)',

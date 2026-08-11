@@ -99,6 +99,7 @@ Card**, or *Edit* on an existing card — or in YAML directly.
 | `entity` | string | *required* | Voice assistant entity ID |
 | `media_entity` | string | — | Media player entity, for playback detection |
 | `bpm_entity` | string | — | BPM sensor entity (defaults to 120 BPM) |
+| `dance_style` | string | `auto` | `auto`, or one pinned move — see [Dancing](#dancing) |
 | `model_url` | string | `/hacsfiles/GLaDOS-3D-Animation/GLaDOS.glb` | Path to the GLB |
 | `bg_color` | string | `#0d0f14` | Scene background |
 | `aspect_ratio` | number | `1.3333` | Card width ÷ height |
@@ -144,7 +145,7 @@ instead of restarting the bar.
 | `listen*`, `wake*` | Active Listening | blue `#00ccff` | head turns to face you |
 | `process*`, `think*` | Computing | orange `#ff6600` | head cocks back, rapid flicker |
 | `respond*`, `speak*`, `tts*` | Speaking | red `#ff2200` | rhythmic nodding, pulsing eye |
-| idle + media `playing` | Dancing | green `#1DB954` | whole-body sway on the beat |
+| idle + media `playing` | Dancing | green `#1DB954` | choreography on the beat, see below |
 
 Each eye is a radial gradient with a white-hot core, painted into the lens
 texture and cross-faded on state changes. The matching colour also drives a
@@ -154,19 +155,60 @@ it out into the surrounding glow.
 ### Dancing
 
 `music.ts` is only a beat clock; the choreography lives in `animation.ts`, which
-is the module that knows the rig. The dance is a **travelling wave** along the
-whole chain — head, neck, three spine segments, ceiling mount — running from the
-head outward: the head leads, and each segment further back repeats the motion
-slightly later, so the body follows rather than whipping the head around.
+is the module that knows the rig. The dance runs along the whole chain — head,
+neck, three spine segments, ceiling mount — built from four moves:
 
-The head barely turns on its own. It sits at the end of a long chain and already
-inherits every ancestor's rotation, so nearly all of its visible travel comes
-from the body carrying it — roughly 2° of rotation of its own against a metre of
-world travel. The bob is a plain cosine on the beat rather than the beat's
-attack/decay envelope, which read as a twitch. A slow swell across each 8-beat
-phrase keeps the loop off the metronome, and amplitude scales up with tempo — a
-faster track is a more energetic one — clamped at both ends so a slow track still
-moves and a very fast one stays inside the frame.
+| Move | Motion |
+|---|---|
+| `sway` | Travelling wave. The head leads and each segment further back repeats the motion slightly later, so the body follows rather than whipping the head around. |
+| `bounce` | A ball bounce once per beat, with the head stretching through the arc and squashing on the landing while the chain concertinas under it. |
+| `headbang` | A sharp flex every two beats — fast plunge, slow recovery — leaning alternate ways on consecutive bangs. Unlike the others this one does *not* ramp linearly along the chain: the amplitude falls off as `k⁴`, so the head supplies about seven tenths of the travel and the spine stays near still. Ramped linearly it folded the whole body and read as a bow rather than a bang. |
+| `wave` | A narrow pulse fired on each beat and lagged hard down the chain, so several are in flight at once and the ripple visibly travels like a row of dominoes. |
+
+All four share the same skeleton. `lag` is how many beats the ceiling mount
+trails the head by, spread along the chain — the larger it is, the more the motion
+travels down the body instead of the chain moving as one. A slow swell across each
+8-beat phrase keeps the loop off the metronome, and amplitude scales up with tempo
+— a faster track is a more energetic one — clamped at both ends so a slow track
+still moves and a very fast one stays inside the frame.
+
+The head barely turns on its own in any of them. It sits at the end of a long
+chain and already inherits every ancestor's rotation, so nearly all of its visible
+travel comes from the body carrying it — under `sway`, roughly 2° of rotation of
+its own against a metre of world travel. Bobs are plain curves on the beat rather
+than the beat's attack/decay envelope, which read as a twitch.
+
+#### The routine
+
+On the default `dance_style: auto` she does not run one move at a track. A routine
+holds a move for **one to three 8-beat phrases**, then cuts to a different one —
+never the same twice running — cross-fading over a beat so the outgoing move
+settles instead of snapping.
+
+Everything it does is measured in beats off the same clock the moves read, never
+in seconds. That is the whole trick: cuts land on the phrase boundaries a listener
+is already feeling, they slow down with the track, and they stop dead when the
+music is paused rather than shuffling on in silence. The grid is anchored to the
+clock rather than to the card's start time, so a dashboard that loads mid-track
+still cuts in time. And because the beat clock keeps running while the assistant
+has the model, interrupting the music and coming back rejoins the routine at
+whatever move the track has arrived at.
+
+Picks are weighted by how well a move's energy suits the tempo — a soft gaussian
+preference, never a gate, so nothing is ever ruled out:
+
+| | `sway` | `wave` | `bounce` | `headbang` |
+|---|---|---|---|---|
+| **75 BPM** | 38% | 33% | 20% | 9% |
+| **155 BPM** | 11% | 18% | 33% | 38% |
+
+Setting `dance_style` to a move name pins it instead, which is the old behaviour
+and useful for tuning one in isolation.
+
+Adding a fifth move is a matter of writing one `DanceStep` function — offsets as a
+function of where a bone sits on the chain and where the beat clock is — and
+adding a row to the `CHOREOGRAPHY` table with its lag and energy. The routine
+picks it up with no further changes.
 
 Four cables (`Wires_Head_in`, `Wires_Out`, `Wires_In`, `BezierCurve024`) sit
 outside the armature in the source blend, driven there by curve and hook
@@ -229,6 +271,8 @@ node test/server.mjs   # static server on :3000
   beside the slider flashes at the set tempo, so the model's bounce can be checked
   against a known beat; it lights up only while the card is actually Dancing. Any
   card option can be overridden from the query string, e.g. `/test?max_fps=30`, `?bloom=0`, `?zoom=1.3`.
+  The **Style** dropdown swaps `dance_style` live, without rebuilding the scene, and
+  reads out which move the routine is on plus the cross-fade percentage mid-cut.
   An FPS readout in the card’s top-left corner reports frames the card actually
   drew — not the browser’s animation-frame rate — alongside the active cap, and
   shows `paused` when the card is scrolled out of view.
