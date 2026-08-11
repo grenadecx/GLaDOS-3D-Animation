@@ -25,17 +25,46 @@ const DANCE_STYLE_LABELS: Record<DanceStyle, string> = {
 const DANCE_STYLE_OPTIONS = Object.entries(DANCE_STYLE_LABELS)
   .map(([value, label]) => ({ value, label }));
 
-const SCHEMA = [
+/** Named framings, so the dropdown offers exact ratios rather than a decimal a
+ *  slider would round off. YAML may still set any number — see `aspectKey`. */
+const ASPECT_PRESETS = [
+  { key: '21:9', value: 21 / 9, label: '21:9 — ultrawide' },
+  { key: '16:9', value: 16 / 9, label: '16:9 — widescreen' },
+  { key: '3:2', value: 3 / 2, label: '3:2' },
+  { key: '4:3', value: 4 / 3, label: '4:3 — default' },
+  { key: '1:1', value: 1, label: '1:1 — square' },
+  { key: '3:4', value: 3 / 4, label: '3:4 — portrait' },
+] as const;
+
+const CUSTOM_ASPECT = 'custom';
+
+/** Which dropdown entry a stored number corresponds to. Anything that is not a
+ *  preset reads back as `custom`, which the editor leaves untouched. */
+function aspectKey(ratio?: number): string | undefined {
+  if (typeof ratio !== 'number') return undefined;
+  return ASPECT_PRESETS.find((p) => Math.abs(p.value - ratio) < 0.005)?.key ?? CUSTOM_ASPECT;
+}
+
+function aspectOptions(ratio?: number) {
+  const options = ASPECT_PRESETS.map(({ key, label }) => ({ value: key, label }));
+  if (aspectKey(ratio) !== CUSTOM_ASPECT) return options;
+  return [...options, { value: CUSTOM_ASPECT, label: `Custom — ${ratio!.toFixed(3)} (from YAML)` }];
+}
+
+const buildSchema = (config: Glados3DConfig) => [
   { name: 'entity', required: true, selector: { entity: { domain: ['assist_satellite', 'conversation'] } } },
   { name: 'media_entity', selector: { entity: { domain: 'media_player' } } },
   { name: 'bpm_entity', selector: { entity: { domain: 'sensor' } } },
   { name: 'dance_style', selector: { select: { mode: 'dropdown', options: DANCE_STYLE_OPTIONS } } },
   {
+    name: 'aspect_ratio',
+    selector: { select: { mode: 'dropdown', options: aspectOptions(config.aspect_ratio) } },
+  },
+  {
     name: '',
     type: 'grid',
     schema: [
       { name: 'zoom', selector: { number: { min: 0.2, max: 3, step: 0.05, mode: 'slider' } } },
-      { name: 'aspect_ratio', selector: { number: { min: 0.5, max: 3, step: 0.01, mode: 'box' } } },
       { name: 'yaw', selector: { number: { min: -180, max: 180, step: 1, mode: 'slider' } } },
       { name: 'pitch', selector: { number: { min: -60, max: 60, step: 1, mode: 'slider' } } },
       { name: 'pan_x', selector: { number: { min: -2, max: 2, step: 0.05, mode: 'slider' } } },
@@ -105,8 +134,12 @@ export class Glados3DCardEditor extends LitElement {
     return html`
       <ha-form
         .hass=${this.hass}
-        .data=${{ ...this._config, bg_color: hexToRgb(this._config.bg_color) }}
-        .schema=${SCHEMA}
+        .data=${{
+          ...this._config,
+          bg_color: hexToRgb(this._config.bg_color),
+          aspect_ratio: aspectKey(this._config.aspect_ratio),
+        }}
+        .schema=${buildSchema(this._config)}
         .computeLabel=${this._computeLabel}
         @value-changed=${this._valueChanged}
       ></ha-form>
@@ -122,6 +155,15 @@ export class Glados3DCardEditor extends LitElement {
       config.bg_color = hex;
     } else {
       delete config.bg_color;
+    }
+
+    const preset = ASPECT_PRESETS.find((p) => p.key === config.aspect_ratio);
+    if (preset) {
+      config.aspect_ratio = preset.value;
+    } else if (config.aspect_ratio === CUSTOM_ASPECT) {
+      config.aspect_ratio = this._config?.aspect_ratio;
+    } else {
+      delete config.aspect_ratio;
     }
 
     this.dispatchEvent(
