@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'node_modules/**', 'models/**'] },
+  { ignores: ['node_modules/**', 'models/**', 'custom_components/**'] },
 
   {
     files: ['src/**/*.ts'],
@@ -11,7 +11,9 @@ export default tseslint.config(
       parserOptions: { project: './tsconfig.json', tsconfigRootDir: import.meta.dirname },
     },
     rules: {
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      // debug is allowed because the overlay runs on every page: its tracing has
+      // to be invisible unless someone deliberately turns verbose logging on.
+      'no-console': ['warn', { allow: ['debug', 'warn', 'error'] }],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
