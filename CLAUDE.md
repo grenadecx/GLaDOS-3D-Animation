@@ -35,8 +35,13 @@ node test/server.mjs   # dev server on :3000 → /test, /test/probe.html
 
 ## Key Config Fields
 
-`entity`, `media_entity`, `bpm_entity`, `model_url`, `bg_color`, `aspect_ratio`,
-`zoom`, `yaw`, `pitch`, `pan_x`, `pan_y`, `bloom`, `max_fps`, `dance_style`
+`entity`, `media_entity`, `bpm_entity`, `model_url`, `bg_color`, `transparent_bg`,
+`show_status`, `aspect_ratio`, `zoom`, `yaw`, `pitch`, `pan_x`, `pan_y`, `bloom`,
+`max_fps`, `dance_style`
+
+`transparent_bg` drops the scene background and the `ha-card` chrome so the model
+sits on the dashboard. It needs an alpha WebGL context and a bloom blend that
+leaves the destination alpha alone — see `preserveAlpha` in `src/scene.ts`.
 
 `dance_style` is `auto` (default — a routine cuts between all moves on 8-beat
 phrase boundaries) or one pinned move: `sway`, `bounce`, `headbang`, `wave`. See

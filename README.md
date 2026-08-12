@@ -102,6 +102,8 @@ Card**, or *Edit* on an existing card — or in YAML directly.
 | `dance_style` | string | `auto` | `auto`, or one pinned move — see [Dancing](#dancing) |
 | `model_url` | string | `/hacsfiles/GLaDOS-3D-Animation/GLaDOS.glb` | Path to the GLB |
 | `bg_color` | string | `#0d0f14` | Scene background |
+| `transparent_bg` | boolean | `false` | Drop the background and the card's own frame, so the model sits straight on the dashboard. Overrides `bg_color` |
+| `show_status` | boolean | `true` | The state readout in the corner — the pulsing dot and its label |
 | `aspect_ratio` | number | `1.3333` | Card width ÷ height. The visual editor offers presets (21:9 … 3:4); YAML accepts any number |
 | `zoom` | number | `1` | Framing multiplier; >1 moves in |
 | `yaw` | number | `-20` | Camera orbit, degrees |

@@ -9,6 +9,11 @@ export interface Glados3DConfig extends LovelaceCardConfig {
   zoom?: number;
   model_url?: string;
   bg_color?: string;
+  /** Drop the background and the card's own chrome, so the model sits directly
+   *  on the dashboard. Overrides `bg_color`. */
+  transparent_bg?: boolean;
+  /** The state readout in the corner — the pulsing dot and its label. */
+  show_status?: boolean;
   /** Camera orbit around the model, in degrees. */
   yaw?: number;
   pitch?: number;

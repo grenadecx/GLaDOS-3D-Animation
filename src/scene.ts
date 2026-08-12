@@ -21,8 +21,12 @@ export interface SceneHandles {
   camera: THREE.PerspectiveCamera;
   render(): void;
   resize(): void;
+  /** Re-read `bg_color` / `transparent_bg` from a config the card has replaced. */
+  setBackground(config: Glados3DConfig): void;
   dispose(): void;
 }
+
+const DEFAULT_BG = '#0d0f14';
 
 /** Bloom only picks up values above this, in linear HDR. The white chassis sits
  *  just under 1.0 under the lighting below, so only the eye emissive blooms. */
@@ -44,14 +48,28 @@ const MSAA_SAMPLES = 4;
 
 export function initScene(canvas: HTMLCanvasElement, config: Glados3DConfig): SceneHandles {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(config.bg_color || '#0d0f14');
+  setBackground(scene, config);
 
   const camera = new THREE.PerspectiveCamera(35, aspectOf(canvas), 0.1, 500);
   camera.position.set(0, 0, 10);
 
   const pixelRatio = Math.min(window.devicePixelRatio, 2);
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  // A context's alpha is fixed the moment it is created, and a canvas hands back
+  // the same context whatever the second caller asks for — so requesting it
+  // unconditionally is what lets `transparent_bg` be toggled on a live card
+  // rather than only at the next dashboard reload. It costs nothing while the
+  // scene has an opaque background: three then clears at alpha 1 regardless.
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    alpha: true,
+    powerPreference: 'high-performance',
+  });
   renderer.setPixelRatio(pixelRatio);
+  // Every pass that clears — RenderPass, and UnrealBloomPass for its own targets
+  // — clears to the renderer's colour, so this zero alpha is what carries the
+  // transparency through the composer.
+  renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 0.95;
@@ -95,8 +113,11 @@ export function initScene(canvas: HTMLCanvasElement, config: Glados3DConfig): Sc
     composer = new EffectComposer(renderer, target);
     composer.setPixelRatio(pixelRatio);
 
+    const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), bloomStrength, BLOOM_RADIUS, BLOOM_THRESHOLD);
+    preserveAlpha(bloom);
+
     composer.addPass(new RenderPass(scene, camera));
-    composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), bloomStrength, BLOOM_RADIUS, BLOOM_THRESHOLD));
+    composer.addPass(bloom);
     composer.addPass(new OutputPass());
   }
 
@@ -115,6 +136,9 @@ export function initScene(canvas: HTMLCanvasElement, config: Glados3DConfig): Sc
       renderer.setSize(width, height, false);
       composer?.setSize(width, height);
     },
+    setBackground(next) {
+      setBackground(scene, next);
+    },
     dispose() {
       composer?.dispose();
       envRT.dispose();
@@ -124,6 +148,40 @@ export function initScene(canvas: HTMLCanvasElement, config: Glados3DConfig): Sc
 
   handles.resize();
   return handles;
+}
+
+/** A null background is what makes the canvas transparent; three then clears to
+ *  the renderer's colour, which is set to zero alpha above. */
+function setBackground(scene: THREE.Scene, config: Glados3DConfig): void {
+  scene.background = config.transparent_bg
+    ? null
+    : new THREE.Color(config.bg_color || DEFAULT_BG);
+}
+
+/**
+ * Stop the bloom pass from filling in a transparent background.
+ *
+ * Its separable blur shader writes `vec4(colour, 1.0)`, so every blurred mip is
+ * fully opaque regardless of what the scene left behind. Blended additively that
+ * alpha lands in the background too, and the canvas comes out solid black — the
+ * eye still glows, but nothing behind the card shows through.
+ *
+ * Additive blending is a preset, and three only reads the separate alpha factors
+ * under CustomBlending, so the RGB half is restated verbatim and only alpha
+ * changes: keep the destination's, discard the pass's. The halo outside the
+ * silhouette therefore carries colour at zero alpha, which the compositor adds
+ * to the page — the glow spills onto the dashboard instead of onto black. With
+ * an opaque background the destination alpha is already 1, so this is inert.
+ */
+function preserveAlpha(bloom: UnrealBloomPass): void {
+  const material = bloom.blendMaterial;
+  material.blending = THREE.CustomBlending;
+  material.blendEquation = THREE.AddEquation;
+  material.blendSrc = THREE.SrcAlphaFactor;
+  material.blendDst = THREE.OneFactor;
+  material.blendEquationAlpha = THREE.AddEquation;
+  material.blendSrcAlpha = THREE.ZeroFactor;
+  material.blendDstAlpha = THREE.OneFactor;
 }
 
 function sizeOf(canvas: HTMLCanvasElement): { width: number; height: number } {

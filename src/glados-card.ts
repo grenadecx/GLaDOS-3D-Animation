@@ -7,7 +7,7 @@
  * work, and is mapped to an animation state that the rAF loop interpolates toward.
  */
 
-import { LitElement, html, css, PropertyValues } from 'lit';
+import { LitElement, html, css, nothing, PropertyValues } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { HomeAssistant } from 'custom-card-helpers';
 import { Glados3DConfig, GladosState } from './types.js';
@@ -47,6 +47,8 @@ const DEFAULTS = {
   zoom: 1.0,
   model_url: '/hacsfiles/GLaDOS-3D-Animation/GLaDOS.glb',
   bg_color: '#0d0f14',
+  transparent_bg: false,
+  show_status: true,
   yaw: -20,
   pitch: 5,
   pan_x: -0.5,
@@ -104,6 +106,10 @@ export class Glados3DCard extends LitElement {
     if (!config || !config.entity) throw new Error('glados-3d-card: "entity" is required');
     this._config = { ...DEFAULTS, ...config };
     this._animation.setStyle(this._config.dance_style);
+    // The dashboard editor re-configures the card it is already previewing
+    // rather than building a new one, so a background edit has to land on the
+    // running scene to be visible at all.
+    this._scene?.setBackground(this._config);
   }
 
   public getCardSize(): number {
@@ -185,13 +191,20 @@ export class Glados3DCard extends LitElement {
 
   render() {
     return html`
-      <ha-card style="--glados-aspect: ${this._config?.aspect_ratio ?? DEFAULTS.aspect_ratio}">
+      <ha-card
+        class=${this._config?.transparent_bg ? 'bare' : ''}
+        style="--glados-aspect: ${this._config?.aspect_ratio ?? DEFAULTS.aspect_ratio}"
+      >
         <div class="stage">
           <canvas></canvas>
-          <div class="status">
-            <span class="dot" style="background: ${STATUS_COLORS[this._gladosState]}"></span>
-            <span class="label">${this._gladosState}</span>
-          </div>
+          ${(this._config?.show_status ?? DEFAULTS.show_status)
+            ? html`
+                <div class="status">
+                  <span class="dot" style="background: ${STATUS_COLORS[this._gladosState]}"></span>
+                  <span class="label">${this._gladosState}</span>
+                </div>
+              `
+            : nothing}
         </div>
       </ha-card>
     `;
@@ -201,6 +214,13 @@ export class Glados3DCard extends LitElement {
     return css`
       :host { display: block; }
       ha-card { overflow: hidden; }
+      /* The canvas alone being transparent still leaves the card's own surface
+         behind it, so the chrome goes too and the model sits on the dashboard. */
+      ha-card.bare {
+        background: none;
+        border: none;
+        box-shadow: none;
+      }
       .stage {
         position: relative;
         width: 100%;

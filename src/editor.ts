@@ -51,7 +51,7 @@ function aspectOptions(ratio?: number) {
   return [...options, { value: CUSTOM_ASPECT, label: `Custom — ${ratio!.toFixed(3)} (from YAML)` }];
 }
 
-const buildSchema = (config: { aspect_ratio?: number }) => [
+const buildSchema = (config: { aspect_ratio?: number; transparent_bg?: boolean }) => [
   { name: 'entity', required: true, selector: { entity: { domain: ['assist_satellite', 'conversation'] } } },
   { name: 'media_entity', selector: { entity: { domain: 'media_player' } } },
   { name: 'bpm_entity', selector: { entity: { domain: 'sensor' } } },
@@ -60,7 +60,11 @@ const buildSchema = (config: { aspect_ratio?: number }) => [
     name: 'aspect_ratio',
     selector: { select: { mode: 'dropdown', options: aspectOptions(config.aspect_ratio) } },
   },
-  { name: 'bg_color', selector: { color_rgb: {} } },
+  { name: 'transparent_bg', selector: { boolean: {} } },
+  { name: 'show_status', selector: { boolean: {} } },
+  // ha-form keeps every key it was handed, so dropping the row while transparent
+  // hides the dead control without losing the colour underneath it.
+  ...(config.transparent_bg ? [] : [{ name: 'bg_color', selector: { color_rgb: {} } }]),
   { name: 'model_url', selector: { text: {} } },
   {
     name: '',
@@ -111,6 +115,8 @@ const LABELS: Record<string, string> = {
   bloom: 'Eye bloom',
   max_fps: 'Max FPS (0 = uncapped)',
   bg_color: 'Background colour',
+  transparent_bg: 'Transparent background (blend into the dashboard)',
+  show_status: 'Show the state readout',
   model_url: 'Model URL',
 };
 
