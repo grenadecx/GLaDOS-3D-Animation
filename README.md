@@ -75,21 +75,6 @@ bpm_entity: sensor.living_room_bpm
 
 The model is served by the integration, so `model_url` needs no override.
 
-## Upgrading from the standalone card
-
-Earlier versions shipped as a HACS **Dashboard** repo. HACS cannot change a
-repository's category in place, so:
-
-1. HACS → GLaDOS 3D Card → **Remove**.
-2. Re-add the repo as an **Integration** and follow [Install](#install) above.
-3. If you wired up an overlay by hand, drop its `extra_module_url` entry from
-   `configuration.yaml` and its Lovelace resource — the integration does both
-   jobs now, and leaving the old one in place runs two overlays at once.
-
-The stale Lovelace resource pointing at `/hacsfiles/GLaDOS-3D-Animation/` is
-removed for you on first start; the leftover files under `www/community/` are
-harmless and can be deleted at your leisure.
-
 ## If she doesn't appear
 
 - **"Custom element doesn't exist: glados-3d-card"** — the resource isn't
