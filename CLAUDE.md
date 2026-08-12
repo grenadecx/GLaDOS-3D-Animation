@@ -62,6 +62,10 @@ drift there ships an update no browser picks up.
 - Never pass `translation_key=None` to a selector config. It is validated as a
   string, so `None` raises `vol.Invalid` inside the step, which HA surfaces as a
   bare HTTP 400 with **nothing in the log**. Only set the key when there is one.
+- The card can render before `setConfig`. Lovelace always configures first, but
+  the overlay attaches its card once the integration answers over the websocket.
+  `_setup()` therefore defers the scene when `_config` is missing, and
+  `setConfig` calls it back — don't reintroduce an unguarded `initScene`.
 - The overlay hides with `display: none`, not `visibility: hidden`. The card
   pauses its WebGL loop with an IntersectionObserver, which only sees geometry —
   an opacity-0 layer still intersects and would render at full rate behind every

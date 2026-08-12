@@ -139,7 +139,9 @@ async function main(): Promise<void> {
   const card = document.createElement(CARD_TAG) as CardElement;
   card.style.maxWidth = 'min(90vw, 90vh)';
   card.style.width = '100%';
-  layer.appendChild(card);
+  // Deliberately not attached yet: the card builds its WebGL scene on its first
+  // render, and our config only arrives once the integration answers. adopt()
+  // attaches it after setConfig, which is the order Lovelace uses too.
   document.body.appendChild(layer);
 
   let configs: SatelliteConfig[] = [];
@@ -173,6 +175,7 @@ async function main(): Promise<void> {
 
   const adopt = (config: SatelliteConfig) => {
     card.setConfig(config.card);
+    if (!card.isConnected) layer.appendChild(card);
     layer.style.alignItems = config.vertical_align;
     layer.style.zIndex = String(config.z_index);
     layer.style.pointerEvents = config.pass_through_taps ? 'none' : 'auto';
