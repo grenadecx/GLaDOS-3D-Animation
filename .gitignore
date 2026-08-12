@@ -1,3 +1,9 @@
 node_modules/
-dist/
 .idea/
+.ha-backup-*/
+__pycache__/
+
+# Build output. The Python is committed so HACS can validate the repo, but the
+# bundles and the model are assembled at release time and shipped in the zip.
+custom_components/glados_3d/frontend/
+glados_3d.zip
