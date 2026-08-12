@@ -30,7 +30,19 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
+
+      # Stamps manifest.json and const.py before the build, so the ?v= on the
+      # served URLs matches the release HACS is installing.
+      - run: node scripts/sync-version.mjs ${{ steps.gitversion.outputs.majorMinorPatch }}
+
       - run: npm run build
+
+      # HACS installs an integration by extracting this straight into
+      # custom_components/glados_3d/, so the contents sit at the zip root.
+      - name: Package the integration
+        run: |
+          cd custom_components/glados_3d
+          zip -r "${GITHUB_WORKSPACE}/glados_3d.zip" . -x '__pycache__/*' '*/__pycache__/*'
 
       - name: Auto-create version tag
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')
@@ -57,9 +69,7 @@ jobs:
         with:
           tag_name: v${{ steps.gitversion.outputs.majorMinorPatch }}
           files: |
-            dist/glados-3d-card.js
-            dist/GLaDOS.glb
-            dist/MODEL-LICENSE.txt
+            glados_3d.zip
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
