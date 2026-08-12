@@ -1,4 +1,11 @@
-# GLaDOS 3D
+<h1 align="center" style="border-bottom: none">GLaDOS 3D</h1>
+
+<p align="center">
+<a href="https://github.com/grenadecx/GLaDOS-3D-Animation/releases"><img src="https://img.shields.io/github/v/release/grenadecx/GLaDOS-3D-Animation?style=for-the-badge&color=purple" alt="Release"></a>
+<a href="https://github.com/grenadecx/GLaDOS-3D-Animation/releases"><img src="https://img.shields.io/github/downloads/grenadecx/GLaDOS-3D-Animation/total?style=for-the-badge&label=Downloads&color=blue" alt="Downloads"></a>
+<a href="https://github.com/grenadecx/GLaDOS-3D-Animation/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/grenadecx/GLaDOS-3D-Animation/release.yml?style=for-the-badge&label=Build" alt="Build"></a>
+<img src="https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge" alt="HACS Custom">
+</p>
 
 A 3D animated GLaDOS for Home Assistant, rendered with Three.js and driven by
 voice assistant entity states and music sync. It ships as two things:
@@ -7,20 +14,64 @@ voice assistant entity states and music sync. It ships as two things:
 - a **voice overlay**, which brings her up full-screen on a Voice Satellite
   screen whenever you talk to your assistant.
 
+<p align="center">
+<img src="demo/demo.webp" width="460" alt="GLaDOS moving through her voice assistant states, then dancing" />
+</p>
+
+Her eye tracks the assistant: amber on standby, blue while listening, orange
+thinking, red speaking, and green once music takes over and she starts to dance.
+
 > Unofficial fan project. Not affiliated with, authorised or endorsed by Valve
 > Corporation. Code is MIT; the model is CC-BY-SA — see [Licence](#licence).
 
-## Install
+## Prerequisites
 
-**1. Add this repo to HACS.** HACS → ⋮ (top right) → **Custom repositories**.
-Paste `https://github.com/grenadecx/GLaDOS-3D-Animation` and set the category to
-**Integration**.
+- **Home Assistant 2024.11.0** or later
+- A voice assistant entity to follow — an `assist_satellite` from
+  [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration)
+  or a Voice PE device, or any `conversation` entity
+- A browser with WebGL, which is every current desktop and mobile browser
 
-**2. Download it**, then restart Home Assistant.
+For the full-screen overlay specifically, you want
+[Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration):
+it is what binds a browser to a particular satellite, and that binding is how the
+overlay decides which screen she belongs on. The dashboard card has no such
+requirement and works with any voice assistant entity.
 
-**3. Add it.** Settings → **Devices & Services** → *Add integration* → **GLaDOS 3D**.
+Optional, for the dance: a `media_player` entity to watch, and a BPM sensor for
+the tempo — see [SongBPM](#bpm-source--songbpm).
 
-That's the whole install. The integration serves the card, the overlay and the
+## Installation
+
+### HACS (recommended)
+
+This is a custom repository, so add it to HACS first:
+
+1. In HACS, open the **⋮** menu (top right) and choose **Custom repositories**
+2. Paste `https://github.com/grenadecx/GLaDOS-3D-Animation`, set the type to
+   **Integration**, and click **Add**
+3. Search HACS for **GLaDOS 3D** and click **Download**
+4. Restart Home Assistant
+
+### Manual
+
+1. Download `glados_3d.zip` from the
+   [latest release](https://github.com/grenadecx/GLaDOS-3D-Animation/releases/latest)
+2. Create `config/custom_components/glados_3d/` and extract the archive into it —
+   its contents sit at the root of the zip, so do not nest another folder
+3. Restart Home Assistant
+
+## Setup
+
+1. Go to **Settings → Devices & Services → Add integration**
+2. Search for **GLaDOS 3D**
+3. Choose the voice satellite she should appear on, and optionally a media player
+   and a BPM sensor
+4. Repeat for each satellite — **one entry per screen**, which is what lets a
+   wall tablet frame her differently from a phone
+5. Adjust her appearance at any time under **Configure** on the entry
+
+That is the whole install. The integration serves the card, the overlay and the
 model itself, and registers the card as a Lovelace resource for you — there is
 nothing to put in `configuration.yaml` and no resource to add by hand. Because
 the served URLs carry the integration version, an update invalidates the browser
@@ -28,9 +79,11 @@ cache on its own.
 
 ## The voice overlay
 
-Each entry binds one voice satellite, so **add one entry per satellite**. Every
-entry gets its own appearance, which is what lets a wall tablet frame her
-differently from a phone.
+![The overlay appearing over a dashboard as the satellite starts listening](demo/overlay.webp)
+
+She fades in over whatever page you are on the moment the satellite wakes, and
+fades out when it goes idle again — the card on the dashboard behind her tracks
+the same states.
 
 Adding an entry asks for:
 
@@ -74,6 +127,8 @@ bpm_entity: sensor.living_room_bpm
 ```
 
 The model is served by the integration, so `model_url` needs no override.
+
+![The card sitting on a Home Assistant dashboard](demo/dashboard.png)
 
 ## If she doesn't appear
 
@@ -266,7 +321,18 @@ about 78 MB of GPU memory and 74 draw calls per frame.
 ```bash
 npm run build          # bundle into custom_components/glados_3d/frontend/
 node test/server.mjs   # static server on :3000
+node scripts/capture-demo.mjs   # regenerate demo/demo.webp (needs ffmpeg)
 ```
+
+`capture-demo.mjs` drives the test page through every state and into a dance and
+records it, so the picture at the top stays honest after a visual change. Three
+things limit how smooth that comes out, and it deals with all of them: it
+launches the chromium channel so WebGL reaches the GPU rather than a software
+rasteriser stuck near 11 fps; it records through CDP screencast, which manages
+~50 fps where element screenshots cost seconds each and Playwright's video
+recorder is fixed at 25; and it writes animated WebP, since GIF frame delays are
+whole centiseconds and so cannot exceed 50 fps at any size. `DEMO_FORMAT=gif`
+falls back to a GIF, and `DEMO_FPS` / `DEMO_WIDTH` trade smoothness for bytes.
 
 The build writes straight into the integration, because that is the layout HACS
 installs: the release zip is the contents of `custom_components/glados_3d/`. The
