@@ -132,7 +132,7 @@
       overrides[k] = isNaN(Number(v)) ? v : Number(v);
     }
 
-    await import('../dist/glados-3d-card.js');
+    await import('../custom_components/glados_3d/frontend/glados-3d-card.js');
     log('card module loaded');
 
     const card = document.createElement('glados-3d-card');

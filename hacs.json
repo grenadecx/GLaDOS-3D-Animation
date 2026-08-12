@@ -1,5 +1,7 @@
 {
-  "name": "GLaDOS 3D Card",
+  "name": "GLaDOS 3D",
   "render_readme": true,
-  "filename": "glados-3d-card.js"
+  "zip_release": true,
+  "filename": "glados_3d.zip",
+  "homeassistant": "2024.11.0"
 }
