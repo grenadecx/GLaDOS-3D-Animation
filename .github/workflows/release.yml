@@ -3,6 +3,18 @@ name: Release
 on:
   push:
     branches: [main]
+    # Every run tags and publishes, so skip the paths that cannot change the
+    # published zip — otherwise a README tweak ships a release identical to the
+    # one before it. A push touching any other path still releases as normal.
+    paths-ignore:
+      - '**/*.md'
+      - 'demo/**'
+      - 'test/**'
+      - 'scripts/capture-demo.mjs'
+      - '.github/**'
+      - '.gitignore'
+  # Escape hatch: release by hand when one of the above is the whole reason.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -45,7 +57,7 @@ jobs:
           zip -r "${GITHUB_WORKSPACE}/glados_3d.zip" . -x '__pycache__/*' '*/__pycache__/*'
 
       - name: Auto-create version tag
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')
+        if: startsWith(github.ref, 'refs/heads/main')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -64,7 +76,7 @@ jobs:
           fi
 
       - name: Create GitHub Release
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')
+        if: startsWith(github.ref, 'refs/heads/main')
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.gitversion.outputs.majorMinorPatch }}
