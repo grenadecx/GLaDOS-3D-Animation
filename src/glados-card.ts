@@ -114,6 +114,9 @@ export class Glados3DCard extends LitElement {
     // rather than building a new one, so a background edit has to land on the
     // running scene to be visible at all.
     this._scene?.setBackground(this._config);
+    // A card that rendered before it was configured deferred its scene; this is
+    // the config it was waiting for. See _setup.
+    if (this._canvas && !this._scene) this._setup();
   }
 
   public getCardSize(): number {
@@ -152,7 +155,12 @@ export class Glados3DCard extends LitElement {
   }
 
   private _setup(): void {
-    if (!this._canvas) return;
+    // Lovelace calls setConfig before the card reaches the DOM, but nothing
+    // enforces that order — the overlay builds its card up front and configures
+    // it once the integration answers over the websocket. Rendering first is
+    // legitimate, so defer the scene rather than building one with no config;
+    // setConfig calls back here when it arrives.
+    if (!this._canvas || !this._config) return;
 
     this._scene = initScene(this._canvas, this._config);
 
