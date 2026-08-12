@@ -8,9 +8,10 @@
  */
 
 import { LitElement, html, css, nothing, PropertyValues } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { state } from 'lit/decorators.js';
 import { HomeAssistant } from 'custom-card-helpers';
 import { Glados3DConfig, GladosState } from './types.js';
+import { define } from './define.js';
 import { initScene, frameCamera, SceneHandles } from './scene.js';
 import { loadModel, ModelHandles } from './model.js';
 import { initAnimation, AnimationHandles, DEFAULT_DANCE_STYLE } from './animation.js';
@@ -31,11 +32,15 @@ declare global {
 }
 
 window.customCards = window.customCards ?? [];
-window.customCards.push({
-  type: 'glados-3d-card',
-  name: 'GLaDOS 3D Card',
-  description: '3D animated GLaDOS card with HA entity sync and music reactivity',
-});
+// Guarded for the same reason as the element registration: a second copy of this
+// module would otherwise list the card twice in the picker.
+if (!window.customCards.some((card) => card.type === 'glados-3d-card')) {
+  window.customCards.push({
+    type: 'glados-3d-card',
+    name: 'GLaDOS 3D Card',
+    description: '3D animated GLaDOS card with HA entity sync and music reactivity',
+  });
+}
 
 /** `satisfies` rather than a type annotation: Glados3DConfig inherits an
  *  index signature from LovelaceCardConfig, which would widen every default
@@ -45,7 +50,7 @@ const DEFAULTS = {
   media_entity: '',
   bpm_entity: '',
   zoom: 1.0,
-  model_url: '/hacsfiles/GLaDOS-3D-Animation/GLaDOS.glb',
+  model_url: '/glados_3d/GLaDOS.glb',
   bg_color: '#0d0f14',
   transparent_bg: false,
   show_status: true,
@@ -70,7 +75,6 @@ const FRAME_SLACK_MS = 2;
 /** Resume slightly before the card scrolls into view, so it is already moving. */
 const VISIBILITY_MARGIN = '150px';
 
-@customElement('glados-3d-card')
 export class Glados3DCard extends LitElement {
   public static getStubConfig(): Record<string, unknown> {
     return { type: 'custom:glados-3d-card', ...DEFAULTS };
@@ -369,3 +373,5 @@ const STATUS_COLORS: Record<GladosState, string> = {
   'speaking': '#ff2200',
   'dancing': '#1db954',
 };
+
+define('glados-3d-card', Glados3DCard);
