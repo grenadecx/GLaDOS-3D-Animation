@@ -1,6 +1,6 @@
 {
   "name": "glados-3d-card",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "3D GLaDOS custom Lovelace card for Home Assistant",
   "main": "dist/glados-3d-card.js",
   "scripts": {

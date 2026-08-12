@@ -7,7 +7,7 @@ from typing import Any, Final
 DOMAIN: Final[str] = "glados_3d"
 
 # Kept in step with package.json and manifest.json by scripts/sync-version.mjs.
-INTEGRATION_VERSION: Final[str] = "0.2.0"
+INTEGRATION_VERSION: Final[str] = "1.0.0"
 
 # Where the bundled frontend is served, and what lives there.
 URL_BASE: Final[str] = f"/{DOMAIN}"
