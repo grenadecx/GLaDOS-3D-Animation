@@ -8,9 +8,10 @@
  */
 
 import { LitElement, html, css } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { property, state } from 'lit/decorators.js';
 import { HomeAssistant } from 'custom-card-helpers';
 import { Glados3DConfig, DanceStyle } from './types.js';
+import { define } from './define.js';
 
 /** Typed as a full record, so adding a choreography preset without a label here
  *  is a compile error rather than a style missing from the dropdown. */
@@ -120,7 +121,6 @@ const LABELS: Record<string, string> = {
   model_url: 'Model URL',
 };
 
-@customElement('glados-3d-card-editor')
 export class Glados3DCardEditor extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private _config?: Glados3DConfig;
@@ -182,3 +182,5 @@ export class Glados3DCardEditor extends LitElement {
     );
   };
 }
+
+define('glados-3d-card-editor', Glados3DCardEditor);
