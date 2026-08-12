@@ -1,0 +1,20 @@
+{
+  "domain": "glados_3d",
+  "name": "GLaDOS 3D",
+  "codeowners": [
+    "@grenadecx"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "frontend",
+    "http",
+    "lovelace",
+    "websocket_api"
+  ],
+  "documentation": "https://github.com/grenadecx/GLaDOS-3D-Animation",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/grenadecx/GLaDOS-3D-Animation/issues",
+  "requirements": [],
+  "version": "0.2.0"
+}
