@@ -1,0 +1,78 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "GLaDOS 3D",
+        "description": "Choose the voice satellite she should appear on. Add one entry per satellite — each gets its own look.",
+        "data": {
+          "entity": "Voice satellite",
+          "media_entity": "Media player",
+          "bpm_entity": "BPM sensor"
+        },
+        "data_description": {
+          "entity": "The assist satellite whose state brings her on screen.",
+          "media_entity": "Optional. She dances while this is playing and the assistant is idle.",
+          "bpm_entity": "Optional. Sets the tempo of the choreography."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "That satellite already has a GLaDOS 3D entry."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Appearance",
+        "description": "How GLaDOS looks on this satellite. Changes apply immediately — no reload needed.",
+        "data": {
+          "vertical_align": "Position on screen",
+          "show_states": "Show her when the satellite is",
+          "aspect_ratio": "Aspect ratio",
+          "dance_style": "Dance style",
+          "zoom": "Zoom",
+          "yaw": "Yaw (°)",
+          "pitch": "Pitch (°)",
+          "pan_x": "Pan X",
+          "pan_y": "Pan Y",
+          "bloom": "Eye bloom",
+          "max_fps": "Max FPS",
+          "fade_ms": "Fade duration (ms)",
+          "show_status": "Show the state readout",
+          "only_on_bound_device": "Only on the bound device"
+        },
+        "data_description": {
+          "zoom": "Above 1 moves the camera in, below 1 pulls it back.",
+          "max_fps": "0 renders on every animation frame, which on a 120 Hz phone is twice the work this animation needs.",
+          "only_on_bound_device": "Show her only on the browser Voice Satellite has bound to this satellite. Turn off to mirror her onto every screen."
+        }
+      }
+    }
+  },
+  "selector": {
+    "vertical_align": {
+      "options": {
+        "top": "Top",
+        "center": "Centre",
+        "bottom": "Bottom"
+      }
+    },
+    "satellite_states": {
+      "options": {
+        "listening": "Listening",
+        "processing": "Processing",
+        "responding": "Responding",
+        "idle": "Idle (always on screen)"
+      }
+    },
+    "dance_style": {
+      "options": {
+        "auto": "Auto — cut between all moves on the beat",
+        "sway": "Sway — travelling wave",
+        "bounce": "Bounce — vertical, with squash and stretch",
+        "headbang": "Headbang — sharp head flex on the beat",
+        "wave": "Wave — domino ripple down the chain"
+      }
+    }
+  }
+}
