@@ -1,93 +1,108 @@
-# GLaDOS 3D Card
+# GLaDOS 3D
 
-A 3D animated GLaDOS custom card for Home Assistant Lovelace dashboards. Renders the
-GLaDOS model with Three.js, driven by voice assistant entity states and music sync.
+A 3D animated GLaDOS for Home Assistant, rendered with Three.js and driven by
+voice assistant entity states and music sync. It ships as two things:
+
+- a **Lovelace card**, for any dashboard;
+- a **voice overlay**, which brings her up full-screen on a Voice Satellite
+  screen whenever you talk to your assistant.
 
 > Unofficial fan project. Not affiliated with, authorised or endorsed by Valve
 > Corporation. Code is MIT; the model is CC-BY-SA — see [Licence](#licence).
 
-## Install via HACS (recommended)
+## Install
 
 **1. Add this repo to HACS.** HACS → ⋮ (top right) → **Custom repositories**.
-Paste `https://github.com/grenadecx/GLaDOS-3D-Animation` and set the type to
-**Dashboard** — that is HACS's category for a Lovelace card. Older guides call it
-*Plugin* or *Lovelace*; it was renamed, and Dashboard is the same thing.
+Paste `https://github.com/grenadecx/GLaDOS-3D-Animation` and set the category to
+**Integration**.
 
-**2. Download it.** Search **GLaDOS 3D Card** in HACS → *Download*, then reload
-your browser when prompted.
+**2. Download it**, then restart Home Assistant.
 
-**3. Register the resource.** On a normal UI dashboard (storage mode) HACS does
-this for you — skip to step 4. Only do this yourself if your dashboard is in YAML
-mode, or if step 4 fails with *Custom element doesn't exist*:
+**3. Add it.** Settings → **Devices & Services** → *Add integration* → **GLaDOS 3D**.
 
-```yaml
-# configuration.yaml, under lovelace:
-resources:
-  - url: /hacsfiles/GLaDOS-3D-Animation/glados-3d-card.js
-    type: module
-```
+That's the whole install. The integration serves the card, the overlay and the
+model itself, and registers the card as a Lovelace resource for you — there is
+nothing to put in `configuration.yaml` and no resource to add by hand. Because
+the served URLs carry the integration version, an update invalidates the browser
+cache on its own.
 
-Via the UI the same entry is Settings → Dashboards → ⋮ → **Resources** → *Add
-resource*, with resource type **JavaScript module** — that is what `type: module`
-means. (The other option, *JavaScript file*, is the legacy type; don't use it.)
+## The voice overlay
 
-**4. Add the card** to a dashboard:
+Each entry binds one voice satellite, so **add one entry per satellite**. Every
+entry gets its own appearance, which is what lets a wall tablet frame her
+differently from a phone.
 
-```yaml
-type: custom:glados-3d-card
-entity: assist_satellite.living_room
-media_entity: media_player.living_room
-bpm_entity: sensor.living_room_bpm
-```
+Adding an entry asks for:
 
-The model is downloaded alongside the card, so `model_url` needs no override.
+| Field | Description |
+|-------|-------------|
+| Voice satellite | The `assist_satellite` whose state brings her on screen |
+| Media player | Optional. She dances while this is playing and the assistant is idle |
+| BPM sensor | Optional. Sets the tempo of the choreography — see [SongBPM](#bpm-source--songbpm) |
 
-## Manual install
+Everything about how she looks lives under *Configure* on the entry, and applies
+immediately — no reload, no restart:
 
-**1. Build** — or skip this and download `glados-3d-card.js` and `GLaDOS.glb`
-from the [latest release](https://github.com/grenadecx/GLaDOS-3D-Animation/releases):
+| Option | Default | Description |
+|--------|---------|-------------|
+| Position on screen | Top | Top, centre or bottom |
+| Show her when the satellite is | Listening, Processing, Responding | Add *Idle* to keep her on screen permanently |
+| Aspect ratio | 1:1 | Square suits a portrait phone; 16:9 suits a tablet |
+| Dance style | Auto | See [Dancing](#dancing) |
+| Zoom, yaw, pitch, pan X/Y, eye bloom | — | Framing and look; same meanings as the card fields below |
+| Max FPS | 60 | `0` renders every animation frame |
+| Fade duration | 220 ms | How long she takes to appear and disappear |
+| Show the state readout | off | The pulsing dot and its label |
+| Only on the bound device | on | Show her only on the browser Voice Satellite has bound to this satellite. Turn off to mirror her onto every screen |
 
-```bash
-npm install
-npm run build
-```
+Which entry a given browser uses is decided by the satellite Voice Satellite has
+bound it to. A browser bound to nothing shows only an entry that has *Only on the
+bound device* turned off.
 
-**2. Copy the card and the model** into your Home Assistant `config/www/` folder:
+The overlay loads on every page, not just dashboards, so she appears whether you
+are on a dashboard, in Settings, or on the Voice Satellite panel itself.
 
-```bash
-cp dist/glados-3d-card.js /path/to/homeassistant/www/
-cp dist/GLaDOS.glb /path/to/homeassistant/www/
-```
+## The card on a dashboard
 
-**3. Register the resource** — Settings → Dashboards → ⋮ → **Resources** → *Add
-resource*, URL `/local/glados-3d-card.js`, type **JavaScript module**. The YAML
-equivalent, for a YAML-mode dashboard:
-
-```yaml
-resources:
-  - url: /local/glados-3d-card.js
-    type: module
-```
-
-**4. Add the card**, pointing `model_url` at the copy you made — the default path
-is the HACS one, so this override is required for a manual install:
+*Add card* → **GLaDOS 3D Card**, or in YAML:
 
 ```yaml
 type: custom:glados-3d-card
 entity: assist_satellite.living_room
 media_entity: media_player.living_room
 bpm_entity: sensor.living_room_bpm
-model_url: /local/GLaDOS.glb
 ```
 
-## If the card doesn't appear
+The model is served by the integration, so `model_url` needs no override.
+
+## Upgrading from the standalone card
+
+Earlier versions shipped as a HACS **Dashboard** repo. HACS cannot change a
+repository's category in place, so:
+
+1. HACS → GLaDOS 3D Card → **Remove**.
+2. Re-add the repo as an **Integration** and follow [Install](#install) above.
+3. If you wired up an overlay by hand, drop its `extra_module_url` entry from
+   `configuration.yaml` and its Lovelace resource — the integration does both
+   jobs now, and leaving the old one in place runs two overlays at once.
+
+The stale Lovelace resource pointing at `/hacsfiles/GLaDOS-3D-Animation/` is
+removed for you on first start; the leftover files under `www/community/` are
+harmless and can be deleted at your leisure.
+
+## If she doesn't appear
 
 - **"Custom element doesn't exist: glados-3d-card"** — the resource isn't
-  registered, or the browser cached the old dashboard. Check the Resources list,
-  then hard-reload (Ctrl/Cmd + Shift + R).
+  registered, or the browser cached the old dashboard. Check Settings →
+  Dashboards → ⋮ → Resources, then hard-reload (Ctrl/Cmd + Shift + R).
 - **Card renders but stays empty** — the GLB didn't load. Open the browser
   console; a 404 on the model means `model_url` is wrong. Paths are
   case-sensitive.
+- **The overlay never shows** — open the console and look for
+  `[glados-3d-overlay]`. It logs how many satellites it was given. If that is
+  zero the entry is not set up; if it is non-zero but she stays hidden, this
+  browser is bound to a different satellite, or to none — see *Only on the bound
+  device* above.
 
 ## Configuration
 
@@ -100,7 +115,7 @@ Card**, or *Edit* on an existing card — or in YAML directly.
 | `media_entity` | string | — | Media player entity, for playback detection |
 | `bpm_entity` | string | — | BPM sensor entity (defaults to 120 BPM) |
 | `dance_style` | string | `auto` | `auto`, or one pinned move — see [Dancing](#dancing) |
-| `model_url` | string | `/hacsfiles/GLaDOS-3D-Animation/GLaDOS.glb` | Path to the GLB |
+| `model_url` | string | `/glados_3d/GLaDOS.glb` | Path to the GLB |
 | `bg_color` | string | `#0d0f14` | Scene background |
 | `transparent_bg` | boolean | `false` | Drop the background and the card's own frame, so the model sits straight on the dashboard. Overrides `bg_color` |
 | `show_status` | boolean | `true` | The state readout in the corner — the pulsing dot and its label |
@@ -264,9 +279,16 @@ about 78 MB of GPU memory and 74 draw calls per frame.
 ## Development
 
 ```bash
-npm run build          # bundle to dist/
+npm run build          # bundle into custom_components/glados_3d/frontend/
 node test/server.mjs   # static server on :3000
 ```
+
+The build writes straight into the integration, because that is the layout HACS
+installs: the release zip is the contents of `custom_components/glados_3d/`. The
+Python is committed; the bundles and the model are assembled at release time.
+`scripts/sync-version.mjs` keeps `package.json`, `manifest.json` and `const.py`
+on one version — the last of those stamps the `?v=` on the served URLs, so a
+drift there ships an update no browser ever picks up.
 
 - `http://localhost:3000/test` — the card with buttons for each voice state, a music
   toggle, and a BPM slider that feeds the simulated `sensor.glados_bpm`. The pip
