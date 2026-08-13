@@ -170,7 +170,7 @@ Card**, or *Edit* on an existing card — or in YAML directly.
 ### BPM source — SongBPM
 
 The card needs a real-time BPM sensor for music sync. The recommended source is
-the [SongBPM integration](https://github.com/Axildor/GLaDOS-AI-Animation) — it
+the [SongBPM-26 integration](https://github.com/Axildor/SongBPM-26) — it
 extracts the current track's BPM so GLaDOS dances at the exact tempo.
 
 **1.** Install SongBPM via HACS (or from source) and configure it to pull BPM from
@@ -354,6 +354,16 @@ drift there ships an update no browser ever picks up.
 - `http://localhost:3000/test/probe.html` — standalone model inspector for framing,
   lighting and material questions, with no card or rebuild in the loop. See the
   comment at the top of that file for its parameters.
+
+## Credits
+
+**[Axildor/GLaDOS-AI-Animation](https://github.com/Axildor/GLaDOS-AI-Animation)** —
+the 2D GLaDOS card this project took its inspiration from.
+
+**BlenderCranium**, for the model, and **jxlarrea**, for
+[Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration).
+See [The model](#the-model) and [Licence](#licence) for the model's attribution
+and terms in full.
 
 ## Licence
 
