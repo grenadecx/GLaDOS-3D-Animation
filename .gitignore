@@ -1,6 +1,5 @@
 node_modules/
 .idea/
-.ha-backup-*/
 __pycache__/
 
 # Build output. The Python is committed so HACS can validate the repo, but the
